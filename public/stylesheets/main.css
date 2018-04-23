@@ -350,4 +350,11 @@ hr.changelog {
   .couple {
     display: inline-block;
   }
+
+}
+
+
+.list-group-item.active{
+  background-color: #b1dfbb;
+  border-color: #8ddf88;
 }

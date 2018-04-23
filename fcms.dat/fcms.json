@@ -1,4 +1,4 @@
 {
-  "toto": "{ \"class\": \"go.GraphLinksModel\",\n  \"nodeDataArray\": [ {\"category\":\"action\", \"text\":\"action\", \"color\":\"white\", \"key\":-4, \"loc\":\"-226 96\"} ],\n  \"linkDataArray\": []}",
-  "second": "{ \"class\": \"go.GraphLinksModel\",\n  \"nodeDataArray\": [ {\"category\":\"event\", \"text\":\"event\", \"color\":\"white\", \"key\":-2, \"loc\":\"-192 26\"} ],\n  \"linkDataArray\": []}"
+  "11": "{ \"class\": \"go.GraphLinksModel\",\n  \"nodeDataArray\": [ \n{\"category\":\"action\", \"text\":\"action\", \"color\":\"white\", \"key\":-4, \"loc\":\"-329.9999999999999 121.99999999999997\"},\n{\"category\":\"event\", \"text\":\"event\", \"color\":\"white\", \"key\":-2, \"loc\":\"-164 120\"}\n ],\n  \"linkDataArray\": [ {\"from\":-4, \"to\":-2} ]}",
+  "22": "{ \"class\": \"go.GraphLinksModel\",\n  \"nodeDataArray\": [ \n{\"category\":\"action\", \"text\":\"action\", \"color\":\"white\", \"key\":-4, \"loc\":\"-329.9999999999999 121.99999999999997\"},\n{\"category\":\"event\", \"text\":\"event\", \"color\":\"white\", \"key\":-2, \"loc\":\"-164 120\"},\n{\"category\":\"simu_event\", \"items\":[ \"event 1\",\"event 2\" ], \"color\":\"white\", \"key\":-3, \"loc\":\"-249.5 224\"}\n ],\n  \"linkDataArray\": [ \n{\"from\":-4, \"to\":-2},\n{\"from\":-4, \"to\":-3}\n ]}"
 }

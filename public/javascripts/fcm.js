@@ -1,3 +1,5 @@
+var fcms = null;
+
 function init() {
     var $ = go.GraphObject.make;
     var NodeType = {"state":1, "event":2, "action":3};
@@ -352,20 +354,12 @@ function init() {
             });
 }
 
-function save_new_fcm(fcm_name) {
-    var ul = document.getElementById("list_fcm");
-    var li = document.createElement("li");
-    li.appendChild(document.createTextNode(fcm_name));
-    li.setAttribute("class", "list-group-item d-flex justify-content-between align-items-center");
-    ul.appendChild(li);
-    $("#fcm_name").val('');
-}
-
 function save_fcm()
 {
     var modelAsText = myDiagram.model.toJson();
     var fcm_name = $("#fcm_name").val();
-    save_new_fcm(fcm_name);
+    add_fcm_in_list_ui(fcm_name);
+    $("#fcm_name").val('');
     var text = modelAsText;
 }
 
@@ -447,6 +441,51 @@ function encode_fcm() {
 
 jQuery(function($){
 
+    function add_fcm_in_list_ui(fcm_name) {
+        var ul = document.getElementById("list_fcm");
+        var li = document.createElement("li");
+        li.appendChild(document.createTextNode(fcm_name));
+        li.setAttribute("class", "list-group-item d-flex justify-content-between align-items-center");
+        li.setAttribute("style", "cursor:pointer");
+
+        var button = document.createElement("button");
+        button.setAttribute("type","button");
+        button.setAttribute("class","close");
+        button.setAttribute("aria-label","Close");
+        button.onclick = function(event) {
+            var r = confirm("Delete \"" + fcm_name + "\" ?");
+            if (r == true) {
+                $.ajax({
+                    type: "POST",
+                    url: "/del_fcm",
+                    data: {
+                        name_fcm: fcm_name
+                    },
+                    success: function(result) {
+                        get_fcms();
+                    },
+                    error: function(result) {
+                        // alert('error');
+                    }
+                });
+            }
+        };
+        var span = document.createElement("span");
+        span.setAttribute("aria-hidden","true");
+        span.innerHTML = "&times;";
+        button.appendChild(span);
+
+        li.appendChild(button);
+        li.onclick = function(event) {
+            myDiagram.model = go.Model.fromJson(fcms[fcm_name]);
+            $("#list_fcm li").each(function() {
+                $(this).attr("class", "list-group-item d-flex justify-content-between align-items-center");
+            });
+            li.setAttribute("class", "list-group-item d-flex justify-content-between align-items-center active");
+        };
+
+        ul.appendChild(li);
+    }
 
     document.getElementById("save_fcm").onclick = function(e) {
         e.preventDefault();
@@ -458,7 +497,7 @@ jQuery(function($){
                 json_fcm: myDiagram.model.toJson()
             },
             success: function(result) {
-                // alert('ok');
+                get_fcms();
             },
             error: function(result) {
                 // alert('error');
@@ -466,22 +505,24 @@ jQuery(function($){
         });
     };
 
-    $.ajax({
-        type: "POST",
-        url: "/get_fcms",
-        data: {
-        },
-        success: function(result) {
-            var fcms = JSON.parse(result);
-            for (var key in fcms) {
-                if (fcms.hasOwnProperty(key)) {
-                    // TODO load fcms
+    function get_fcms() {
+        $.ajax({
+            type: "POST",
+            url: "/get_fcms",
+            data: {},
+            success: function (result) {
+                $("#list_fcm").empty();
+                fcms = JSON.parse(result);
+                for (var key in fcms) {
+                    if (fcms.hasOwnProperty(key)) {
+                        add_fcm_in_list_ui(key);
+                    }
                 }
+            },
+            error: function (result) {
+                // alert('error');
             }
-        },
-        error: function(result) {
-            // alert('error');
-        }
-    });
-
+        });
+    }
+    get_fcms();
 });

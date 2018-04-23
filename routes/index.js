@@ -33,4 +33,11 @@ router.post('/save_fcm', function (req, res) {
     res.render('index', { title: 'FCM Editor' });
 });
 
+// Receive command to execute in VE
+router.post('/del_fcm', function (req, res) {
+    var name_fcm = req.body.name_fcm;
+    store.del(name_fcm);
+    res.render('index', { title: 'FCM Editor' });
+});
+
 module.exports = router;
