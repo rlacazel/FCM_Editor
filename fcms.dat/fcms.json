@@ -1,0 +1,4 @@
+{
+  "toto": "{ \"class\": \"go.GraphLinksModel\",\n  \"nodeDataArray\": [ {\"category\":\"action\", \"text\":\"action\", \"color\":\"white\", \"key\":-4, \"loc\":\"-226 96\"} ],\n  \"linkDataArray\": []}",
+  "second": "{ \"class\": \"go.GraphLinksModel\",\n  \"nodeDataArray\": [ {\"category\":\"event\", \"text\":\"event\", \"color\":\"white\", \"key\":-2, \"loc\":\"-192 26\"} ],\n  \"linkDataArray\": []}"
+}
