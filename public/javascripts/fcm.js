@@ -1,4 +1,194 @@
 var fcms = null;
+var myDiagram = null;
+var selected_li = null;
+
+jQuery(function($) {
+
+    function add_fcm_in_list_ui(fcm_name) {
+        var ul = $("#list_fcm");
+        var li = $("<li></li>");
+        li.attr("class", "list-group-item d-flex justify-content-between align-items-center");
+        li.attr("style", "cursor:pointer");
+        var span_text = document.createElement("small");
+        span_text.setAttribute("class", "text-muted");
+        span_text.setAttribute("id", "fcm_txt");
+        span_text.setAttribute("style", "max-width: 180px; word-wrap: break-word;");
+        span_text.textContent = fcm_name;
+        li.append(span_text);
+
+        add_list_button(li, span_text);
+
+        li.on("click",function() {
+            if (selected_li == li) return;
+            var isinput = $("#target").is(":input");
+            if (!isinput) {
+                if (fcms && fcm_name in fcms) {
+                    myDiagram.model = go.Model.fromJson(fcms[fcm_name]);
+                }
+                else
+                {
+                    myDiagram.model = new go.GraphLinksModel();
+                }
+                selected_li = li;
+                $("#list_fcm li").each(function () {
+                    $(this).attr("class", "list-group-item d-flex justify-content-between align-items-center");
+                });
+                li.attr("class", "list-group-item d-flex justify-content-between align-items-center active");
+                $("#list_fcm li").each(function () {
+                    $(this).find('#unsaved_label').css("visibility", "hidden    ");
+                });
+            }
+        });
+
+        ul.append(li);
+        return li;
+    }
+
+    function add_list_button(li_item, span_text) {
+        var div = document.createElement("div");
+        var oriVal, input;
+
+        var unsaved = document.createElement("small");
+        unsaved.setAttribute("class", "text-muted");
+        unsaved.setAttribute("style", "margin-right: 5px; visibility:hidden;");
+        unsaved.setAttribute("id", "unsaved_label");
+        unsaved.textContent = "(unsaved)";
+        div.appendChild(unsaved);
+
+        var button_rename = document.createElement("img");
+        button_rename.setAttribute("src", "images/rename.png");
+        button_rename.setAttribute("style", "margin-top: -2.5px; margin-right: 3px;");
+        button_rename.onclick = function (event) {
+            event.stopImmediatePropagation();
+            oriVal = span_text.textContent;
+            input = $("<input type='text' value=\"" + oriVal + "\">");
+            input.insertBefore(span_text).focus();
+            span_text.remove();
+
+            f = function(e) {
+                if(e.keyCode && e.keyCode != 13) return;
+                var $this = $(this);
+                var new_val = $this.val();
+                $this.remove();
+                span_text.textContent = $this.val();
+                li_item.prepend(span_text);
+                if ($this.val() != oriVal) {
+                    rename_fcm(oriVal, $this.val());
+                };
+            }
+
+            input.focusout(f);
+            input.keyup(f);
+        };
+        div.appendChild(button_rename);
+
+
+        var button = document.createElement("button");
+        button.setAttribute("type", "button");
+        button.setAttribute("class", "close");
+        button.setAttribute("aria-label", "Close");
+        button.onclick = function (event) {
+            event.stopImmediatePropagation();
+            var r = confirm("Delete \"" + span_text.textContent + "\" ?");
+            if (r == true) {
+                $.ajax({
+                    type: "POST",
+                    url: "/del_fcm",
+                    data: {
+                        name_fcm: span_text.textContent
+                    },
+                    success: function (result) {
+                        li_item.remove();
+                        myDiagram.model = new go.GraphLinksModel();
+                    },
+                    error: function (result) {
+                        // alert('error');
+                    }
+                });
+            }
+        };
+        var span = document.createElement("span");
+        span.setAttribute("aria-hidden", "true");
+        span.innerHTML = "&times;";
+        button.appendChild(span);
+        div.appendChild(button);
+
+        li_item.append(div);
+    }
+
+    function rename_fcm(old, n) {
+        $.ajax({
+            type: "POST",
+            url: "/rename_fcm",
+            data: {
+                old_name_fcm: old,
+                new_name_fcm: n
+            },
+            success: function (result) {
+                // get_fcms();
+            },
+            error: function (result) {
+                // alert('error');
+            }
+        });
+    }
+
+    function save_fcm(name) {
+        $.ajax({
+            type: "POST",
+            url: "/save_fcm",
+            data: {
+                name_fcm: name,
+                json_fcm: myDiagram.model.toJson()
+            },
+            success: function (result) {
+                selected_li.find('#unsaved_label').css("visibility", "hidden");
+                fcms[name] = myDiagram.model.toJson();
+            },
+            error: function (result) {
+                // alert('error');
+            }
+        });
+    }
+
+    document.getElementById("save_fcm").onclick = function (e) {
+        e.preventDefault();
+        save_fcm(selected_li.find('#fcm_txt').text());
+    };
+
+    function get_fcms() {
+        $.ajax({
+            type: "POST",
+            url: "/get_fcms",
+            data: {},
+            success: function (result) {
+                fcms = JSON.parse(result);
+                for (var key in fcms) {
+                    if (fcms.hasOwnProperty(key)) {
+                        add_fcm_in_list_ui(key);
+                    }
+                }
+            },
+            error: function (result) {
+                // alert('error');
+            }
+        });
+    }
+
+    function init_list_fcms() {
+        // init current fcm and load others
+        $("#list_fcm").empty();
+        var li = add_fcm_in_list_ui("Untitled");
+        li.click();
+        get_fcms();
+    }
+
+    function update_unsave_label()
+    {
+        if (selected_li) {
+            selected_li.find('#unsaved_label').css("visibility", "visible");
+        }
+    }
 
 function init() {
     var $ = go.GraphObject.make;
@@ -23,6 +213,13 @@ function init() {
     // Define the appearance and behavior for Nodes:
 
     // First, define the shared context menu for all Nodes, Links, and Groups.
+
+    myDiagram.addModelChangedListener(function digmModified(evt) {
+        if (!evt.isTransactionFinished) return;
+        var txn = evt.object;  // a Transaction
+        if (txn === null || evt.object.name == "Transaction") return;
+        update_unsave_label();
+    });
 
 
     function nodeStyle() {
@@ -352,251 +549,85 @@ function init() {
                     { category: "action", text: "action", color: "white" }
                 ])
             });
-}
 
-function generate_fcm_file()
-{
-    var modelAsText = myDiagram.model.toJson();
-    //alert(modelAsText);
-    var fcm_name = $("#fcm_name").val();
-    save_new_fcm(fcm_name);
-    /*var text = `
-     package actuplan.fcms;
-
-     import java.util.Arrays;
-     import java.util.List;
-
-     import fcm.CognitiveMap;
-     import fcm.Concept;
-     import fcm.ConceptActivator;
-     import fcm.act.LinearActivator;
-     import fcm.act.SignumActivator;
-     import fcm.act.SignumActivator.Mode;
-     import fcm.conn.WeightedConnection;
-
-     public class ` + fcm_name + ` extends FcmInstance {
-
-     public medivac_called(List<String> params)
-     {
-     super(params);
-
-     map = new CognitiveMap("` + fcm_name + `");
-
-     LinearActivator lin = new LinearActivator(0,1,0,1);
-
-     ConceptActivator sig_pos = new SignumActivator(0);
-     ((SignumActivator) sig_pos).setMode(Mode.BINARY);
-
-     Concept total_victims = new Concept("total_victims", lin, true, true);
-     total_victims.setValues(0,  1, Arrays.asList("false", "true"));
-     map.addConcept(total_victims);
-
-     Concept add_victim = new Concept("add_victim", sig_pos, false, false);
-     add_victim.setValues(0,  1, Arrays.asList("false", "true"));
-     add_victim.setHasNoPrecondition();
-     map.addConcept(add_victim);
-
-     Concept medivac_called = new Concept("medivac_called", lin, true, true);
-     medivac_called.setValues(0,  1, Arrays.asList("false", "true"));
-     map.addConcept(medivac_called);
-
-     Concept medivac_arriving = new Concept("medivac_arriving", sig_pos, false, false);
-     medivac_arriving.setValues(0,  1, Arrays.asList("false", "true"));
-     map.addConcept(medivac_arriving);
-
-     int delay = 1;
-     map.addConnection(new WeightedConnection("total_victims -> add_victim", "", 1, 1));
-     //map.addConnection(new WeightedConnection("difficulty -> add_victim", "", 1, 1));
-     map.addConnection(new WeightedConnection("add_victim -> medivac_arriving", "", -1, 0));
-     map.addConnection(new WeightedConnection("medivac_called -> medivac_arriving", "", 1, 1));
-
-     runner.setMap(map);
-     }
-     }`*/
-    return text;
-}
-
-function encode_fcm() {
-    var fcm_txt = generate_fcm_file();
-    var element = document.createElement('a');
-    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(fcm_txt));
-    element.setAttribute('download', 'test.java');
-
-    element.style.display = 'none';
-    document.body.appendChild(element);
-
-    element.click();
-
-    document.body.removeChild(element);
-};
-
-jQuery(function($){
-
-    function add_fcm_in_list_ui(fcm_name) {
-        var ul = $("#list_fcm");
-        var li = document.createElement("li");
-        //li.appendChild(document.createTextNode(fcm_name));
-        li.setAttribute("class", "list-group-item d-flex justify-content-between align-items-center");
-        li.setAttribute("style", "cursor:pointer");
-        var span_text = document.createElement("small");
-        span_text.setAttribute("class", "text-muted");
-        span_text.setAttribute("id", "fcm_txt");
-        span_text.textContent = fcm_name;
-        li.appendChild(span_text);
-
-       /* var oriVal;
-        $("#list_fcm").on('dblclick', 'li', function () {
-            oriVal = $(this).text().substring(0, $(this).text().length - 1);
-            $(this).text("");
-            $("<input type='text' value="+ oriVal + ">").appendTo(this).focus();
-        });
-        $("#list_fcm").on('focusout', 'li > input', function () {
-            var $this = $(this);
-            $this.parent().text($this.val() || oriVal);
-            $this.remove(); // Don't just hide, remove the element.
-            add_remove_button_to_li(li);
-            if($this.val() != oriVal)
-            {
-                // save_fcm($this.val());
-            }
-        });*/
-
-        add_list_button(li, span_text);
-
-        li.onclick = function(event) {
-            var isinput = $(event.target).is(":input");
-            if (!isinput) {
-                myDiagram.model = go.Model.fromJson(fcms[fcm_name]);
-                $("#list_fcm li").each(function () {
-                    $(this).attr("class", "list-group-item d-flex justify-content-between align-items-center");
-                });
-                li.setAttribute("class", "list-group-item d-flex justify-content-between align-items-center active");
-            }
-        };
-
-        ul.append(li);
     }
 
-    function add_list_button(li_item, span_text)
+    function generate_fcm_file()
     {
-        var div = document.createElement("div");
-        var oriVal;
+        var modelAsText = myDiagram.model.toJson();
+        //alert(modelAsText);
+        var fcm_name = $("#fcm_name").val();
+        save_new_fcm(fcm_name);
+        /*var text = `
+         package actuplan.fcms;
 
-        var button_rename = document.createElement("img");
-        button_rename.setAttribute("src","images/rename.png");
-        button_rename.setAttribute("style","margin-top: -2.5px; margin-right: 3px;");
-        button_rename.onclick = function(event) {
-            event.stopImmediatePropagation();
-            oriVal = span_text.textContent;
-            $("<input type='text' value="+ oriVal + ">").insertBefore(span_text).focus();
-            span_text.remove();
-        };
-        div.appendChild(button_rename);
+         import java.util.Arrays;
+         import java.util.List;
 
-        $("#list_fcm").on('focusout', 'li > input', function () {
-            var $this = $(this);
-            var new_val = $this.val();
-            $this.remove();
-            span_text.textContent = $this.val();
-            li_item.insertBefore(span_text, li_item.firstChild);
-            if($this.val() != oriVal)
-            {
-                rename_fcm(oriVal, $this.val());
-            }
-        });
+         import fcm.CognitiveMap;
+         import fcm.Concept;
+         import fcm.ConceptActivator;
+         import fcm.act.LinearActivator;
+         import fcm.act.SignumActivator;
+         import fcm.act.SignumActivator.Mode;
+         import fcm.conn.WeightedConnection;
 
-        var button = document.createElement("button");
-        button.setAttribute("type","button");
-        button.setAttribute("class","close");
-        button.setAttribute("aria-label","Close");
-        button.onclick = function(event) {
-            event.stopImmediatePropagation();
-            var r = confirm("Delete \"" + fcm_name + "\" ?");
-            if (r == true) {
-                $.ajax({
-                    type: "POST",
-                    url: "/del_fcm",
-                    data: {
-                        name_fcm: fcm_name
-                    },
-                    success: function(result) {
-                        ul.removeChild(li_item);
-                        myDiagram.model = new go.GraphLinksModel();
-                    },
-                    error: function(result) {
-                        // alert('error');
-                    }
-                });
-            }
-        };
-        var span = document.createElement("span");
-        span.setAttribute("aria-hidden","true");
-        span.innerHTML = "&times;";
-        button.appendChild(span);
-        div.appendChild(button);
+         public class ` + fcm_name + ` extends FcmInstance {
 
-        li_item.appendChild(div);
+         public medivac_called(List<String> params)
+         {
+         super(params);
+
+         map = new CognitiveMap("` + fcm_name + `");
+
+         LinearActivator lin = new LinearActivator(0,1,0,1);
+
+         ConceptActivator sig_pos = new SignumActivator(0);
+         ((SignumActivator) sig_pos).setMode(Mode.BINARY);
+
+         Concept total_victims = new Concept("total_victims", lin, true, true);
+         total_victims.setValues(0,  1, Arrays.asList("false", "true"));
+         map.addConcept(total_victims);
+
+         Concept add_victim = new Concept("add_victim", sig_pos, false, false);
+         add_victim.setValues(0,  1, Arrays.asList("false", "true"));
+         add_victim.setHasNoPrecondition();
+         map.addConcept(add_victim);
+
+         Concept medivac_called = new Concept("medivac_called", lin, true, true);
+         medivac_called.setValues(0,  1, Arrays.asList("false", "true"));
+         map.addConcept(medivac_called);
+
+         Concept medivac_arriving = new Concept("medivac_arriving", sig_pos, false, false);
+         medivac_arriving.setValues(0,  1, Arrays.asList("false", "true"));
+         map.addConcept(medivac_arriving);
+
+         int delay = 1;
+         map.addConnection(new WeightedConnection("total_victims -> add_victim", "", 1, 1));
+         //map.addConnection(new WeightedConnection("difficulty -> add_victim", "", 1, 1));
+         map.addConnection(new WeightedConnection("add_victim -> medivac_arriving", "", -1, 0));
+         map.addConnection(new WeightedConnection("medivac_called -> medivac_arriving", "", 1, 1));
+
+         runner.setMap(map);
+         }
+         }`*/
+        return text;
     }
 
-    function rename_fcm(old, n)
-    {
-        $.ajax({
-            type: "POST",
-            url: "/rename_fcm",
-            data: {
-                old_name_fcm: old,
-                new_name_fcm: n
-            },
-            success: function(result) {
-                // get_fcms();
-            },
-            error: function(result) {
-                // alert('error');
-            }
-        });
-    }
+    function encode_fcm() {
+        var fcm_txt = generate_fcm_file();
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(fcm_txt));
+        element.setAttribute('download', 'test.java');
 
-    function save_fcm(name)
-    {
-        $.ajax({
-            type: "POST",
-            url: "/save_fcm",
-            data: {
-                name_fcm: name,
-                json_fcm: myDiagram.model.toJson()
-            },
-            success: function(result) {
-                get_fcms();
-            },
-            error: function(result) {
-                // alert('error');
-            }
-        });
-    }
+        element.style.display = 'none';
+        document.body.appendChild(element);
 
-    document.getElementById("save_fcm").onclick = function(e) {
-        e.preventDefault();
-        save_fcm($("#fcm_name").val());
+        element.click();
+
+        document.body.removeChild(element);
     };
 
-    function get_fcms() {
-        $.ajax({
-            type: "POST",
-            url: "/get_fcms",
-            data: {},
-            success: function (result) {
-                $("#list_fcm").empty();
-                fcms = JSON.parse(result);
-                for (var key in fcms) {
-                    if (fcms.hasOwnProperty(key)) {
-                        add_fcm_in_list_ui(key);
-                    }
-                }
-            },
-            error: function (result) {
-                // alert('error');
-            }
-        });
-    }
-    get_fcms();
+    init();
+    init_list_fcms();
 });

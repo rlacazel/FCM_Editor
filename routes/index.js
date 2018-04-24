@@ -29,6 +29,8 @@ router.post('/get_fcms', function(req,res) {
 router.post('/save_fcm', function (req, res) {
     var name_fcm = req.body.name_fcm;
     var json_fcm = req.body.json_fcm;
+    console.log(name_fcm);
+    console.log(json_fcm);
     store.set(name_fcm,json_fcm);
     res.render('index', { title: 'FCM Editor' });
 });
