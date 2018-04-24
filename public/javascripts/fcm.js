@@ -354,15 +354,6 @@ function init() {
             });
 }
 
-function save_fcm()
-{
-    var modelAsText = myDiagram.model.toJson();
-    var fcm_name = $("#fcm_name").val();
-    add_fcm_in_list_ui(fcm_name);
-    $("#fcm_name").val('');
-    var text = modelAsText;
-}
-
 function generate_fcm_file()
 {
     var modelAsText = myDiagram.model.toJson();
@@ -442,17 +433,84 @@ function encode_fcm() {
 jQuery(function($){
 
     function add_fcm_in_list_ui(fcm_name) {
-        var ul = document.getElementById("list_fcm");
+        var ul = $("#list_fcm");
         var li = document.createElement("li");
-        li.appendChild(document.createTextNode(fcm_name));
+        //li.appendChild(document.createTextNode(fcm_name));
         li.setAttribute("class", "list-group-item d-flex justify-content-between align-items-center");
         li.setAttribute("style", "cursor:pointer");
+        var span_text = document.createElement("small");
+        span_text.setAttribute("class", "text-muted");
+        span_text.setAttribute("id", "fcm_txt");
+        span_text.textContent = fcm_name;
+        li.appendChild(span_text);
+
+       /* var oriVal;
+        $("#list_fcm").on('dblclick', 'li', function () {
+            oriVal = $(this).text().substring(0, $(this).text().length - 1);
+            $(this).text("");
+            $("<input type='text' value="+ oriVal + ">").appendTo(this).focus();
+        });
+        $("#list_fcm").on('focusout', 'li > input', function () {
+            var $this = $(this);
+            $this.parent().text($this.val() || oriVal);
+            $this.remove(); // Don't just hide, remove the element.
+            add_remove_button_to_li(li);
+            if($this.val() != oriVal)
+            {
+                // save_fcm($this.val());
+            }
+        });*/
+
+        add_list_button(li, span_text);
+
+        li.onclick = function(event) {
+            var isinput = $(event.target).is(":input");
+            if (!isinput) {
+                myDiagram.model = go.Model.fromJson(fcms[fcm_name]);
+                $("#list_fcm li").each(function () {
+                    $(this).attr("class", "list-group-item d-flex justify-content-between align-items-center");
+                });
+                li.setAttribute("class", "list-group-item d-flex justify-content-between align-items-center active");
+            }
+        };
+
+        ul.append(li);
+    }
+
+    function add_list_button(li_item, span_text)
+    {
+        var div = document.createElement("div");
+        var oriVal;
+
+        var button_rename = document.createElement("img");
+        button_rename.setAttribute("src","images/rename.png");
+        button_rename.setAttribute("style","margin-top: -2.5px; margin-right: 3px;");
+        button_rename.onclick = function(event) {
+            event.stopImmediatePropagation();
+            oriVal = span_text.textContent;
+            $("<input type='text' value="+ oriVal + ">").insertBefore(span_text).focus();
+            span_text.remove();
+        };
+        div.appendChild(button_rename);
+
+        $("#list_fcm").on('focusout', 'li > input', function () {
+            var $this = $(this);
+            var new_val = $this.val();
+            $this.remove();
+            span_text.textContent = $this.val();
+            li_item.insertBefore(span_text, li_item.firstChild);
+            if($this.val() != oriVal)
+            {
+                rename_fcm(oriVal, $this.val());
+            }
+        });
 
         var button = document.createElement("button");
         button.setAttribute("type","button");
         button.setAttribute("class","close");
         button.setAttribute("aria-label","Close");
         button.onclick = function(event) {
+            event.stopImmediatePropagation();
             var r = confirm("Delete \"" + fcm_name + "\" ?");
             if (r == true) {
                 $.ajax({
@@ -462,7 +520,8 @@ jQuery(function($){
                         name_fcm: fcm_name
                     },
                     success: function(result) {
-                        get_fcms();
+                        ul.removeChild(li_item);
+                        myDiagram.model = new go.GraphLinksModel();
                     },
                     error: function(result) {
                         // alert('error');
@@ -474,26 +533,36 @@ jQuery(function($){
         span.setAttribute("aria-hidden","true");
         span.innerHTML = "&times;";
         button.appendChild(span);
+        div.appendChild(button);
 
-        li.appendChild(button);
-        li.onclick = function(event) {
-            myDiagram.model = go.Model.fromJson(fcms[fcm_name]);
-            $("#list_fcm li").each(function() {
-                $(this).attr("class", "list-group-item d-flex justify-content-between align-items-center");
-            });
-            li.setAttribute("class", "list-group-item d-flex justify-content-between align-items-center active");
-        };
-
-        ul.appendChild(li);
+        li_item.appendChild(div);
     }
 
-    document.getElementById("save_fcm").onclick = function(e) {
-        e.preventDefault();
+    function rename_fcm(old, n)
+    {
+        $.ajax({
+            type: "POST",
+            url: "/rename_fcm",
+            data: {
+                old_name_fcm: old,
+                new_name_fcm: n
+            },
+            success: function(result) {
+                // get_fcms();
+            },
+            error: function(result) {
+                // alert('error');
+            }
+        });
+    }
+
+    function save_fcm(name)
+    {
         $.ajax({
             type: "POST",
             url: "/save_fcm",
             data: {
-                name_fcm: $("#fcm_name").val(),
+                name_fcm: name,
                 json_fcm: myDiagram.model.toJson()
             },
             success: function(result) {
@@ -503,6 +572,11 @@ jQuery(function($){
                 // alert('error');
             }
         });
+    }
+
+    document.getElementById("save_fcm").onclick = function(e) {
+        e.preventDefault();
+        save_fcm($("#fcm_name").val());
     };
 
     function get_fcms() {

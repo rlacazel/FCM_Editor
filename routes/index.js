@@ -40,4 +40,13 @@ router.post('/del_fcm', function (req, res) {
     res.render('index', { title: 'FCM Editor' });
 });
 
+router.post('/rename_fcm', function (req, res) {
+    var old_name_fcm = req.body.old_name_fcm;
+    var new_name_fcm = req.body.new_name_fcm;
+    var json_fcm = store.get(old_name_fcm);
+    store.del(old_name_fcm);
+    store.set(new_name_fcm,json_fcm);
+    res.render('index', { title: 'FCM Editor' });
+});
+
 module.exports = router;
