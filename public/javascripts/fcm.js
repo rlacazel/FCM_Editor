@@ -4,7 +4,7 @@ var selected_li = null;
 
 jQuery(function($) {
 
-    function add_fcm_in_list_ui(fcm_name) {
+    function add_fcm_in_list_ui(fcm_name, add_before) {
         var ul = $("#list_fcm");
         var li = $("<li></li>");
         li.attr("class", "list-group-item d-flex justify-content-between align-items-center");
@@ -19,46 +19,45 @@ jQuery(function($) {
         add_list_button(li, span_text);
 
         li.on("click",function() {
-            if (selected_li == li) return;
-            var isinput = $("#target").is(":input");
-            if (!isinput) {
-                if (fcms && fcm_name in fcms) {
-                    myDiagram.model = go.Model.fromJson(fcms[fcm_name]);
-                }
-                else
-                {
-                    myDiagram.model = new go.GraphLinksModel();
-                }
-                selected_li = li;
-                $("#list_fcm li").each(function () {
-                    $(this).attr("class", "list-group-item d-flex justify-content-between align-items-center");
-                });
-                li.attr("class", "list-group-item d-flex justify-content-between align-items-center active");
-                $("#list_fcm li").each(function () {
-                    $(this).find('#unsaved_label').css("visibility", "hidden    ");
-                });
-            }
+            // do not enter if the selected element was already selected or the click is on the input rename box
+            if (selected_li == li || $("#target").is(":input")) return;
+
+            if (fcms && fcm_name in fcms) {  myDiagram.model = go.Model.fromJson(fcms[fcm_name]); }
+            else  { myDiagram.model = new go.GraphLinksModel(); }
+
+            selected_li = li;
+            $("#list_fcm li").each(function () {
+                $(this).removeClass("active");
+            });
+            li.addClass("active");
+            $("#list_fcm li").each(function () {
+                $(this).find('#unsaved_label').css("visibility", "hidden");
+            });
         });
 
-        ul.append(li);
+        if (add_before) { ul.prepend(li);}
+        else {ul.append(li);}
+
         return li;
     }
 
     function add_list_button(li_item, span_text) {
-        var div = document.createElement("div");
+        var div = $("<div></div>");
         var oriVal, input;
 
+        // Modification flag label
         var unsaved = document.createElement("small");
         unsaved.setAttribute("class", "text-muted");
         unsaved.setAttribute("style", "margin-right: 5px; visibility:hidden;");
         unsaved.setAttribute("id", "unsaved_label");
         unsaved.textContent = "(unsaved)";
-        div.appendChild(unsaved);
+        div.append(unsaved);
 
-        var button_rename = document.createElement("img");
-        button_rename.setAttribute("src", "images/rename.png");
-        button_rename.setAttribute("style", "margin-top: -2.5px; margin-right: 3px;");
-        button_rename.onclick = function (event) {
+        // rename button
+        var button_rename = $("<img></img>");
+        button_rename.attr("src", "images/rename.png");
+        button_rename.attr("style", "margin-top: -2.5px; margin-right: 3px;");
+        button_rename.on("click",function() {
             event.stopImmediatePropagation();
             oriVal = span_text.textContent;
             input = $("<input type='text' value=\"" + oriVal + "\">");
@@ -73,24 +72,26 @@ jQuery(function($) {
                 span_text.textContent = $this.val();
                 li_item.prepend(span_text);
                 if ($this.val() != oriVal) {
-                    rename_fcm(oriVal, $this.val());
+                    rename_fcm(oriVal, $this.val(), span_text);
                 };
             }
 
             input.focusout(f);
             input.keyup(f);
-        };
-        div.appendChild(button_rename);
+        });
+        div.append(button_rename);
 
-
-        var button = document.createElement("button");
-        button.setAttribute("type", "button");
-        button.setAttribute("class", "close");
-        button.setAttribute("aria-label", "Close");
-        button.onclick = function (event) {
-            event.stopImmediatePropagation();
-            var r = confirm("Delete \"" + span_text.textContent + "\" ?");
-            if (r == true) {
+        // Delete button
+        var button_delete = $("<button></button>");
+        button_delete.attr("type", "button");
+        button_delete.attr("class", "close");
+        button_delete.attr("aria-label", "Close");
+        button_delete.attr("data-toggle", "confirm_del");
+        button_delete.confirmation({
+            rootSelector: '[data-toggle=confirmation]',
+            title: 'Delete \"' + span_text.textContent + '\" ?',
+            onConfirm: function() {
+                button_delete.confirmation('hide');
                 $.ajax({
                     type: "POST",
                     url: "/del_fcm",
@@ -102,21 +103,23 @@ jQuery(function($) {
                         myDiagram.model = new go.GraphLinksModel();
                     },
                     error: function (result) {
-                        // alert('error');
+                        alert('Error while deleting the FCM');
                     }
                 });
-            }
-        };
-        var span = document.createElement("span");
-        span.setAttribute("aria-hidden", "true");
-        span.innerHTML = "&times;";
-        button.appendChild(span);
-        div.appendChild(button);
+            },
+            popout: true
+        });
+
+        var span = $("<span></span>");
+        span.attr("aria-hidden", "true");
+        span.html("&times;");
+        button_delete.append(span);
+        div.append(button_delete);
 
         li_item.append(div);
     }
 
-    function rename_fcm(old, n) {
+    function rename_fcm(old, n, span_text) {
         $.ajax({
             type: "POST",
             url: "/rename_fcm",
@@ -128,7 +131,8 @@ jQuery(function($) {
                 // get_fcms();
             },
             error: function (result) {
-                // alert('error');
+                span_text.textContent = old;
+                alert(result.responseText);
             }
         });
     }
@@ -146,7 +150,7 @@ jQuery(function($) {
                 fcms[name] = myDiagram.model.toJson();
             },
             error: function (result) {
-                // alert('error');
+                alert(result.responseText);
             }
         });
     }
@@ -156,7 +160,8 @@ jQuery(function($) {
         save_fcm(selected_li.find('#fcm_txt').text());
     };
 
-    function get_fcms() {
+    function load_fcms() {
+
         $.ajax({
             type: "POST",
             url: "/get_fcms",
@@ -165,9 +170,12 @@ jQuery(function($) {
                 fcms = JSON.parse(result);
                 for (var key in fcms) {
                     if (fcms.hasOwnProperty(key)) {
-                        add_fcm_in_list_ui(key);
+                        add_fcm_in_list_ui(key,false);
                     }
                 }
+                var li = add_fcm_in_list_ui(generate_default_fcm_name(),true);
+                li.click();
+                li.find('#unsaved_label').css("visibility", "visible");
             },
             error: function (result) {
                 // alert('error');
@@ -176,11 +184,19 @@ jQuery(function($) {
     }
 
     function init_list_fcms() {
-        // init current fcm and load others
-        $("#list_fcm").empty();
-        var li = add_fcm_in_list_ui("Untitled");
-        li.click();
-        get_fcms();
+        load_fcms();
+    }
+
+    function generate_default_fcm_name()
+    {
+        var i = 2;
+        var name = 'Untitled';
+        while(name in fcms)
+        {
+            name = 'Untitled' + i.toString();
+            i++;
+        }
+        return name;
     }
 
     function update_unsave_label()
@@ -190,7 +206,8 @@ jQuery(function($) {
         }
     }
 
-function init() {
+function init_diagram() {
+
     var $ = go.GraphObject.make;
     var NodeType = {"state":1, "event":2, "action":3};
 
@@ -217,7 +234,7 @@ function init() {
     myDiagram.addModelChangedListener(function digmModified(evt) {
         if (!evt.isTransactionFinished) return;
         var txn = evt.object;  // a Transaction
-        if (txn === null || evt.object.name == "Transaction") return;
+        if (txn === null || evt.object.name == "Transaction" || evt.object.name == "Initial Layout") return;
         update_unsave_label();
     });
 
@@ -628,6 +645,6 @@ function init() {
         document.body.removeChild(element);
     };
 
-    init();
+    init_diagram();
     init_list_fcms();
 });

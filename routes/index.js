@@ -29,10 +29,8 @@ router.post('/get_fcms', function(req,res) {
 router.post('/save_fcm', function (req, res) {
     var name_fcm = req.body.name_fcm;
     var json_fcm = req.body.json_fcm;
-    console.log(name_fcm);
-    console.log(json_fcm);
-    store.set(name_fcm,json_fcm);
-    res.render('index', { title: 'FCM Editor' });
+    store.set(name_fcm, json_fcm);
+    res.render('index', {title: 'FCM Editor'});
 });
 
 // Receive command to execute in VE
@@ -45,10 +43,16 @@ router.post('/del_fcm', function (req, res) {
 router.post('/rename_fcm', function (req, res) {
     var old_name_fcm = req.body.old_name_fcm;
     var new_name_fcm = req.body.new_name_fcm;
-    var json_fcm = store.get(old_name_fcm);
-    store.del(old_name_fcm);
-    store.set(new_name_fcm,json_fcm);
-    res.render('index', { title: 'FCM Editor' });
+    if(store.has(new_name_fcm))
+    {
+        res.status(500).send('The name \"' + new_name_fcm + '\" already exist!');
+    }
+    else {
+        var json_fcm = store.get(old_name_fcm);
+        store.del(old_name_fcm);
+        store.set(new_name_fcm, json_fcm);
+        res.render('index', {title: 'FCM Editor'});
+    }
 });
 
 module.exports = router;
