@@ -185,6 +185,8 @@ jQuery(function($) {
 
     function init_list_fcms() {
         load_fcms();
+        document.getElementById("clickMe").onclick = function () {
+            myDiagram.layoutDiagram(true); };
     }
 
     function generate_default_fcm_name()
@@ -227,6 +229,10 @@ function init_diagram() {
                 "undoManager.isEnabled": true
             });
     myDiagram.allowDrop = true;  // permit accepting drag-and-drops
+    myDiagram.layout = $(go.LayeredDigraphLayout);
+    myDiagram.layout.isInitial = false;
+    myDiagram.layout.isOngoing = false;
+    set_layout_options();
     // Define the appearance and behavior for Nodes:
 
     // First, define the shared context menu for all Nodes, Links, and Groups.
@@ -312,6 +318,42 @@ function init_diagram() {
         part.location = myDiagram.toolManager.contextMenuTool.mouseDownPoint;
         myDiagram.commitTransaction("addNode");
     }
+
+    var cpt_template =
+        $(go.Node, "Spot", nodeStyle(),
+            $(go.Panel, "Auto",
+                $(go.Shape, "Diamond", {geometryStretch: go.GraphObject.Uniform},
+                    new go.Binding("fill", "color")),
+                $(go.TextBlock,
+                    { margin: 2,
+                        font: "15px sans-serif",
+                        editable: true},
+                    new go.Binding("text", "text"))
+            ),
+            // four named ports, one on each side:
+            makePort("T", go.Spot.Top, true, true),
+            makePort("L", go.Spot.Left, true, true),
+            makePort("R", go.Spot.Right, true, true),
+            makePort("B", go.Spot.Bottom, true, true)
+        );
+
+    var hnt_template =
+        $(go.Node, "Spot", nodeStyle(),
+            $(go.Panel, "Auto",
+                $(go.Shape, "TriangleUp",
+                    new go.Binding("fill", "color")),
+                $(go.TextBlock,
+                    { margin: 3,
+                        font: "15px sans-serif",
+                        editable: true},
+                    new go.Binding("text", "text"))
+            ),
+            // four named ports, one on each side:
+            makePort("T", go.Spot.Top, true, true),
+            makePort("L", go.Spot.BottomLeft, true, true),
+            makePort("R", go.Spot.BottomRight, true, true),
+            makePort("B", go.Spot.Bottom, true, true)
+        );
 
     var statetemplate =
         $(go.Node, "Spot", nodeStyle(),
@@ -446,6 +488,8 @@ function init_diagram() {
     templmap.add("action", actiontemplate);
     templmap.add("event", eventtemplate);
     templmap.add("simu_event", simulta_template);
+    templmap.add("hnt", hnt_template);
+    templmap.add("cpt", cpt_template);
     myDiagram.nodeTemplateMap = templmap;
 
 
@@ -563,11 +607,31 @@ function init_diagram() {
                     { category: "state", text: "state", color: "white" },
                     { category: "event", text: "event", color: "white" },
                     { category: "simu_event", items: [ "event 1", "event 2" ], color: "white" },
-                    { category: "action", text: "action", color: "white" }
+                    { category: "action", text: "action", color: "white" },
+                    { category: "cpt", text: "cpt", color: "white" },
+                    { category: "hnt", text: "hnt", color: "white" }
                 ])
             });
 
     }
+
+    function set_layout_options() {
+        var lay = myDiagram.layout;
+
+        lay.direction = 0;
+        lay.layerSpacing = 60;
+        lay.columnSpacing = 40;
+
+        //lay.cycleRemoveOption = go.LayeredDigraphLayout.CycleDepthFirst;
+
+        lay.layeringOption = go.LayeredDigraphLayout.LayerLongestPathSource;
+        lay.initializeOption = go.LayeredDigraphLayout.InitNaive;
+        lay.aggressiveOption = go.LayeredDigraphLayout.AggressiveLess;
+        lay.packOption = go.LayeredDigraphLayout.PackMedian;
+
+        lay.setsPortSpots = true;
+    }
+
 
     function generate_fcm_file()
     {
