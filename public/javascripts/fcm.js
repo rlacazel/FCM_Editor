@@ -226,7 +226,7 @@ function init_diagram() {
                 "commandHandler.archetypeGroupData": { text: "Group", isGroup: true, color: "blue" },
 
                 // enable undo & redo
-                "undoManager.isEnabled": true
+                "undoManager.isEnabled": true,
             });
     myDiagram.allowDrop = true;  // permit accepting drag-and-drops
     myDiagram.layout = $(go.LayeredDigraphLayout);
@@ -244,7 +244,6 @@ function init_diagram() {
         update_unsave_label();
     });
 
-
     function nodeStyle() {
         return [
             // The Node.location comes from the "loc" property of the node data,
@@ -260,8 +259,8 @@ function init_diagram() {
                 // handle mouse enter/leave events to show/hide the ports
                 mouseEnter: function (e, obj) { showSmallPorts(obj.part, true); },
                 mouseLeave: function (e, obj) { showSmallPorts(obj.part, false); }
-            }
-        ];
+            },
+    ];
     }
 
     function showSmallPorts(node, show) {
@@ -318,6 +317,29 @@ function init_diagram() {
         part.location = myDiagram.toolManager.contextMenuTool.mouseDownPoint;
         myDiagram.commitTransaction("addNode");
     }
+
+    var partContextMenu =
+        $(go.Adornment, "Vertical",
+            makeButton("Add difficulty",
+                function(e, obj) {
+                   var contextmenu = obj.part;  // the Button is in the context menu Adornment
+                    var part = contextmenu.adornedPart;  // the adornedPart is the Part that the context menu adorns
+                    myDiagram.model.setDataProperty(part.data, "difficulty", part.data.difficulty+"+");
+                },
+                function(o) { return true; }),
+            makeButton("Remove difficulty",
+                function(e, obj) {
+                    var contextmenu = obj.part;  // the Button is in the context menu Adornment
+                    var part = contextmenu.adornedPart;  // the adornedPart is the Part that the context menu adorns
+                    var new_str = part.data.difficulty.substr(0,part.data.difficulty.length-1);
+                    myDiagram.model.setDataProperty(part.data, "difficulty", new_str);
+                },
+                function(obj) {
+                    var contextmenu = obj.part;  // the Button is in the context menu Adornment
+                    var part = contextmenu.adornedPart;  // the adornedPart is the Part that the context menu adorns
+                    return part.data.difficulty.length > 0;
+                })
+        );
 
     var cpt_template =
         $(go.Node, "Spot", nodeStyle(),
@@ -378,18 +400,30 @@ function init_diagram() {
             $(go.Panel, "Auto",
                 $(go.Shape, "RoundedRectangle",
                     new go.Binding("fill", "color")),
-                $(go.TextBlock,
-                    { margin: 5,
-                        font: "15px sans-serif",
-                        editable: true},
-                    new go.Binding("text", "text"))
+                $(go.Panel, "Horizontal",
+                    $(go.TextBlock,
+                        { margin: 5,
+                            font: "15px sans-serif",
+                            editable: true},
+                        new go.Binding("text", "text")),
+                    $(go.TextBlock,
+                        {   margin: new go.Margin(4, 0, 0, 0),
+                            font: "bold 15px sans-serif",
+                            stroke: "red",
+                            editable: false},
+                        new go.Binding("text", "difficulty"),
+                        new go.Binding("visible", "difficulty", function(v) { return v != ""; })))
             ),
+            {
+                contextMenu: partContextMenu
+            },
             // four named ports, one on each side:
             makePort("T", go.Spot.Top, true, true),
             makePort("L", go.Spot.Left, true, true),
             makePort("R", go.Spot.Right, true, true),
             makePort("B", go.Spot.Bottom, true, true)
         );
+
 
     var actiontemplate =
         $(go.Node, "Spot", nodeStyle(),
@@ -493,21 +527,6 @@ function init_diagram() {
     myDiagram.nodeTemplateMap = templmap;
 
 
-    function nodeInfo(d) {  // Tooltip info for a node data object
-        var str = "Node " + d.key + ": " + d.text + "\n";
-        if (d.group)
-            str += "member of " + d.group;
-        else
-            str += "top-level node";
-        return str;
-    }
-
-    // Define the appearance and behavior for Links:
-
-    function linkInfo(d) {  // Tooltip info for a link data object
-        return "Link:\nfrom " + d.from + " to " + d.to;
-    }
-
     // The link shape and arrowhead have their stroke brush data bound to the "color" property
     myDiagram.linkTemplate =
         $(go.Link,
@@ -530,31 +549,6 @@ function init_diagram() {
             }
         );
 
-    // Define the appearance and behavior for Groups:
-
-    function groupInfo(adornment) {  // takes the tooltip or context menu, not a group node data object
-        var g = adornment.adornedPart;  // get the Group that the tooltip adorns
-        var mems = g.memberParts.count;
-        var links = 0;
-        g.memberParts.each(function(part) {
-            if (part instanceof go.Link) links++;
-        });
-        return "Group " + g.data.key + ": " + g.data.text + "\n" + mems + " members including " + links + " links";
-    }
-    // Define the behavior for the Diagram background:
-
-    function diagramInfo(model) {  // Tooltip info for the diagram's model
-        return "Model:\n" + model.nodeDataArray.length + " nodes, " + model.linkDataArray.length + " links";
-    }
-
-    // provide a tooltip for the background of the Diagram, when not over any Part
-    myDiagram.toolTip =
-        $(go.Adornment, "Auto",
-            $(go.Shape, { fill: "#FFFFCC" }),
-            $(go.TextBlock, { margin: 4 },
-                new go.Binding("text", "", diagramInfo))
-        );
-
     // provide a context menu for the background of the Diagram, when not over any Part
     myDiagram.contextMenu =
         $(go.Adornment, "Vertical",
@@ -566,8 +560,8 @@ function init_diagram() {
                 function(o) { return o.diagram.commandHandler.canUndo(); }),
             makeButton("Redo",
                 function(e, obj) { e.diagram.commandHandler.redo(); },
-                function(o) { return o.diagram.commandHandler.canRedo(); }),
-            makeButton("Add state",
+                function(o) { return o.diagram.commandHandler.canRedo(); })
+            /*makeButton("Add state",
                 function(e, obj) { addNode(NodeType.state); },
                 function(o) { return true; }),
             makeButton("Add action",
@@ -575,17 +569,9 @@ function init_diagram() {
                 function(o) { return true; }),
             makeButton("Add event",
                 function(e, obj) { addNode(NodeType.event); },
-                function(o) { return true; })
+                function(o) { return true; })*/
         );
 
-    // Make all ports on a node visible when the mouse is over the node
-    function showPorts(node, show) {
-        var diagram = node.diagram;
-        if (!diagram || diagram.isReadOnly || !diagram.allowLink) return;
-        node.ports.each(function(port) {
-            port.stroke = (show ? "black" : null);
-        });
-    }
 
     // Create the Diagram's Model:
     var nodeDataArray = [
@@ -605,7 +591,7 @@ function init_diagram() {
                 nodeTemplateMap: myDiagram.nodeTemplateMap,  // share the templates used by myDiagram
                 model: new go.GraphLinksModel([  // specify the contents of the Palette
                     { category: "state", text: "state", color: "white" },
-                    { category: "event", text: "event", color: "white" },
+                    { category: "event", text: "event", color: "white", difficulty: "" },
                     { category: "simu_event", items: [ "event 1", "event 2" ], color: "white" },
                     { category: "action", text: "action", color: "white" },
                     { category: "cpt", text: "cpt", color: "white" },
@@ -613,7 +599,35 @@ function init_diagram() {
                 ])
             });
 
+
+       /* var eventtemplate2 = eventtemplate.copy();
+
+        eventtemplate.selectionAdornmentTemplate =
+            $(go.Adornment, "Spot",
+                $(go.Panel, "Auto",
+                    $(go.Shape, "Rectangle", { stroke: "dodgerblue", strokeWidth: 2, fill: null }),
+                    $(go.Placeholder)  // a Placeholder sizes itself to the selected Node
+                ),
+                // the button to create a "next" node, at the top-right corner
+                $("Button",
+                    {
+                        alignment: go.Spot.TopRight,
+                        click: update_criteria  // this function is defined below
+                    },
+                    $(go.Shape, "PlusLine", { width: 6, height: 6 })
+                ) // end button
+            ); // end Adornment*/
+
+        var templmap2 = templmap.copy();
+        //templmap2.add("event", eventtemplate2);
+        myPalette.nodeTemplateMap = templmap2;
+
+        function update_criteria()
+        {
+            alert(2);
+        }
     }
+
 
     function set_layout_options() {
         var lay = myDiagram.layout;
