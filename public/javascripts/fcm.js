@@ -1,6 +1,7 @@
 var fcms = null;
 var myDiagram = null;
 var selected_li = null;
+var redraw_required = false;
 
 jQuery(function($) {
 
@@ -186,7 +187,9 @@ jQuery(function($) {
     function init_list_fcms() {
         load_fcms();
         document.getElementById("clickMe").onclick = function () {
-            myDiagram.layoutDiagram(true); };
+            myDiagram.layoutDiagram(true);
+            redraw_required = true;
+        };
     }
 
     function generate_default_fcm_name()
@@ -222,9 +225,6 @@ function init_diagram() {
                 // allow double-click in background to create a new node
                 "clickCreatingTool.archetypeNodeData": { text: "Node", color: "white" },
 
-                // allow Ctrl-G to call groupSelection()
-                "commandHandler.archetypeGroupData": { text: "Group", isGroup: true, color: "blue" },
-
                 // enable undo & redo
                 "undoManager.isEnabled": true,
             });
@@ -232,6 +232,8 @@ function init_diagram() {
     myDiagram.layout = $(go.LayeredDigraphLayout);
     myDiagram.layout.isInitial = false;
     myDiagram.layout.isOngoing = false;
+   // myDiagram.layout.isRouting = false;
+
     set_layout_options();
     // Define the appearance and behavior for Nodes:
 
@@ -244,22 +246,46 @@ function init_diagram() {
         update_unsave_label();
     });
 
+    myDiagram.addDiagramListener("AnimationFinished", function (evt) {
+        if (redraw_required) {
+            var links = myDiagram.model.linkDataArray;
+            var tmp_links = [];
+            for (var lnk in links) {
+                tmp_links.push(links[lnk]);
+            }
+            for(var ll in tmp_links)
+            {
+                myDiagram.model.removeLinkData(tmp_links[ll]);
+            }
+            for(var ll in tmp_links)
+            {
+                myDiagram.model.addLinkData(tmp_links[ll]);
+            }
+            //myDiagram.model.removeLinkData();
+           /* var fcm_tmp = myDiagram.model.toJson();
+            myDiagram.model = new go.GraphLinksModel();
+            myDiagram.model = go.Model.fromJson(fcm_tmp);
+            myDiagram.animationManager.stopAnimation();*/
+        }
+    });
+
+
     function nodeStyle() {
         return [
-            // The Node.location comes from the "loc" property of the node data,
-            // converted by the Point.parse static method.
-            // If the Node.location is changed, it updates the "loc" property of the node data,
-            // converting back using the Point.stringify static method.
             new go.Binding("location", "loc", go.Point.parse).makeTwoWay(go.Point.stringify),
             {
-                // the Node.location is at the center of each node
                 locationSpot: go.Spot.Center,
-                //isShadowed: true,
-                //shadowColor: "#888",
                 // handle mouse enter/leave events to show/hide the ports
-                mouseEnter: function (e, obj) { showSmallPorts(obj.part, true); },
-                mouseLeave: function (e, obj) { showSmallPorts(obj.part, false); }
+               // mouseEnter: function (e, obj) { showSmallPorts(obj.part, true); },
+               // mouseLeave: function (e, obj) { showSmallPorts(obj.part, false); }
             },
+            new go.Binding("isShadowed", "isSelected").ofObject(),
+            {
+                selectionAdorned: false,
+                shadowOffset: new go.Point(0, 0),
+                shadowBlur: 15,
+                shadowColor: "blue"
+            }
     ];
     }
 
@@ -341,64 +367,129 @@ function init_diagram() {
                 })
         );
 
+    var partContextMenuForLink =
+        $(go.Adornment, "Vertical",
+            makeButton("Negative link",
+                function(e, obj) {
+                    var contextmenu = obj.part;
+                    var part = contextmenu.adornedPart;
+                    myDiagram.model.setDataProperty(part.data, "label", "not");
+                    myDiagram.model.setDataProperty(part.data, "visible", true);
+                },
+                function(obj) {
+                    var contextmenu = obj.part;
+                    var part = contextmenu.adornedPart;
+                    return !part.data.label || part.data.label == "";
+            }),
+            makeButton("Positive link",
+                function(e, obj) {
+                    var contextmenu = obj.part;
+                    var part = contextmenu.adornedPart;
+                    myDiagram.model.setDataProperty(part.data, "label", "");
+                    myDiagram.model.setDataProperty(part.data, "visible", false);
+                },
+                function(obj) {
+                    var contextmenu = obj.part;
+                    var part = contextmenu.adornedPart;
+                    return part.data.label == "not";
+                })
+        );
+
     var cpt_template =
         $(go.Node, "Spot", nodeStyle(),
             $(go.Panel, "Auto",
-                $(go.Shape, "Diamond", {geometryStretch: go.GraphObject.Uniform},
+                $(go.Shape, "Diamond", {geometryStretch: go.GraphObject.Uniform, portId: "",
+                        fromLinkable: true,
+                        toLinkable: true},
                     new go.Binding("fill", "color")),
                 $(go.TextBlock,
                     { margin: 2,
                         font: "15px sans-serif",
                         editable: true},
                     new go.Binding("text", "text"))
-            ),
-            // four named ports, one on each side:
-            makePort("T", go.Spot.Top, true, true),
-            makePort("L", go.Spot.Left, true, true),
-            makePort("R", go.Spot.Right, true, true),
-            makePort("B", go.Spot.Bottom, true, true)
+            )
         );
 
     var hnt_template =
         $(go.Node, "Spot", nodeStyle(),
             $(go.Panel, "Auto",
                 $(go.Shape, "TriangleUp",
+                    {portId: "",
+                        fromLinkable: true,
+                        toLinkable: true},
                     new go.Binding("fill", "color")),
                 $(go.TextBlock,
                     { margin: 3,
                         font: "15px sans-serif",
                         editable: true},
                     new go.Binding("text", "text"))
-            ),
-            // four named ports, one on each side:
-            makePort("T", go.Spot.Top, true, true),
-            makePort("L", go.Spot.BottomLeft, true, true),
-            makePort("R", go.Spot.BottomRight, true, true),
-            makePort("B", go.Spot.Bottom, true, true)
+            )
         );
+
+    function portStyleGate(input) {
+        return {
+            desiredSize: new go.Size(6, 6),
+            fill: null,
+            stroke: null,
+            fromSpot: go.Spot.Right,
+            fromLinkable: !input,
+            toSpot: go.Spot.Left,
+            toLinkable: input,
+            toMaxLinks: 1,
+            cursor: "pointer"
+        };
+    }
+
+    var or_template =
+        $(go.Node, "Spot", nodeStyle(),
+            $(go.Shape, "OrGate", {
+                fill: "white",
+                stroke: "darkslategray",
+                desiredSize: new go.Size(30, 30),
+                strokeWidth: 1,portId: "",
+                fromLinkable: true,
+                toLinkable: true
+            }),
+            $(go.TextBlock, {text:"or"}),
+            /*$(go.Shape, "Circle", portStyleGate(true),
+                {   portId: "a",
+                    alignment: new go.Spot(0.25, 0.5)
+                }),
+            $(go.Shape, "Circle", portStyleGate(false),
+                { portId: "b", alignment: new go.Spot(0.9, 0.5) })*/
+        );
+
 
     var statetemplate =
         $(go.Node, "Spot", nodeStyle(),
             $(go.Panel, "Auto",
                 $(go.Shape, "Rectangle",
+                    {portId: "",
+                    fromLinkable: true,
+                    fromSpot: go.Spot.None,
+                    toSpot: go.Spot.None,
+                    toLinkable: true},
                     new go.Binding("fill", "color")),
                 $(go.TextBlock,
                     { margin: 8,
                         font: "15px sans-serif",
                         editable: true},
                     new go.Binding("text", "text"))
-            ),
+            )
             // four named ports, one on each side:
-            makePort("T", go.Spot.Top, true, true),
+            /*makePort("T", go.Spot.Top, true, true),
             makePort("L", go.Spot.Left, true, true),
             makePort("R", go.Spot.Right, true, true),
-            makePort("B", go.Spot.Bottom, true, true)
+            makePort("B", go.Spot.Bottom, true, true)*/
         );
 
     var eventtemplate =
         $(go.Node, "Spot", nodeStyle(),
             $(go.Panel, "Auto",
                 $(go.Shape, "RoundedRectangle",
+                    {portId: "",
+                        fromLinkable: true,
+                        toLinkable: true},
                     new go.Binding("fill", "color")),
                 $(go.Panel, "Horizontal",
                     $(go.TextBlock,
@@ -416,12 +507,7 @@ function init_diagram() {
             ),
             {
                 contextMenu: partContextMenu
-            },
-            // four named ports, one on each side:
-            makePort("T", go.Spot.Top, true, true),
-            makePort("L", go.Spot.Left, true, true),
-            makePort("R", go.Spot.Right, true, true),
-            makePort("B", go.Spot.Bottom, true, true)
+            }
         );
 
 
@@ -429,24 +515,24 @@ function init_diagram() {
         $(go.Node, "Spot", nodeStyle(),
             $(go.Panel, "Auto",
                 $(go.Shape, "Ellipse",
+                    {portId: "",
+                        fromLinkable: true,
+                        toLinkable: true},
                     new go.Binding("fill", "color")),
                 $(go.TextBlock,
                     { margin: 5,
                         font: "15px sans-serif",
                         editable: true},
                     new go.Binding("text", "text"))
-            ),
-            // four named ports, one on each side:
-            makePort("T", go.Spot.Top, true, true),
-            makePort("L", go.Spot.Left, true, true),
-            makePort("R", go.Spot.Right, true, true),
-            makePort("B", go.Spot.Bottom, true, true)
+            )
         );
 
     var simulta_template =
         $(go.Node, "Auto", nodeStyle(),
             $(go.Shape, "RoundedRectangle",
-                { fill: "white" }),
+                { fill: "white", portId: "",
+                    fromLinkable: true,
+                    toLinkable: true }),
             $(go.Panel, "Vertical",
                 $(go.Panel, "Vertical",
                     new go.Binding("itemArray", "items"),
@@ -490,12 +576,7 @@ function init_diagram() {
                                 addEvent(node);
                                 e.diagram.commitTransaction(""); } } )
                 )
-            ),
-            // four named ports, one on each side:
-            makePort("T", go.Spot.Top, true, true),
-            makePort("L", go.Spot.Left, true, true),
-            makePort("R", go.Spot.Right, true, true),
-            makePort("B", go.Spot.Bottom, true, true)
+            )
         );
 
     function addEvent(node) {
@@ -524,28 +605,47 @@ function init_diagram() {
     templmap.add("simu_event", simulta_template);
     templmap.add("hnt", hnt_template);
     templmap.add("cpt", cpt_template);
+    templmap.add("or", or_template);
     myDiagram.nodeTemplateMap = templmap;
 
 
     // The link shape and arrowhead have their stroke brush data bound to the "color" property
     myDiagram.linkTemplate =
         $(go.Link,
-            { toShortLength: 3, relinkableFrom: true, relinkableTo: true },  // allow the user to relink existing links
+            {
+                relinkableFrom: true,
+                relinkableTo: true,
+                fromPortId: "",
+                toPortId: "",
+                selectionAdorned: false, // Links are not adorned when selected so that their color remains visible.
+                shadowOffset: new go.Point(0, 0), shadowBlur: 5, shadowColor: "blue",
+            },
+            new go.Binding("isShadowed", "isSelected").ofObject(),
             $(go.Shape,
                 { strokeWidth: 1 },
                 new go.Binding("stroke", "color")),
             $(go.Shape,
                 { toArrow: "Standard", stroke: null },
                 new go.Binding("fill", "color")),
-            { // this tooltip Adornment is shared by all links
-                toolTip:
-                    $(go.Adornment, "Auto",
-                        $(go.Shape, { fill: "#FFFFCC" })
-                        /*$(go.TextBlock, { margin: 4 },  // the tooltip shows the result of calling linkInfo(data)
-                         new go.Binding("text", "", linkInfo))*/
-                    ),
-                // the same context menu Adornment is shared by all links
-                //contextMenu: partContextMenu
+            $(go.Panel, "Auto",
+                $(go.Shape,  // the label background, which becomes transparent around the edges
+                    {
+                        fill: $(go.Brush, "Radial",
+                            { 0: "rgb(240, 240, 240)", 0.3: "rgb(240, 240, 240)", 1: "rgba(240, 240, 240, 0)" }),
+                        stroke: null,
+                        visible: false
+                    },
+                    new go.Binding("visible", "visible")),
+                $(go.TextBlock, "",  // the label text
+                    {
+                        textAlign: "center",
+                        font: "10pt helvetica, arial, sans-serif",
+                        margin: 8
+                    },
+                    new go.Binding("text", "label")
+            )),
+            {
+                contextMenu: partContextMenuForLink
             }
         );
 
@@ -561,15 +661,6 @@ function init_diagram() {
             makeButton("Redo",
                 function(e, obj) { e.diagram.commandHandler.redo(); },
                 function(o) { return o.diagram.commandHandler.canRedo(); })
-            /*makeButton("Add state",
-                function(e, obj) { addNode(NodeType.state); },
-                function(o) { return true; }),
-            makeButton("Add action",
-                function(e, obj) { addNode(NodeType.action); },
-                function(o) { return true; }),
-            makeButton("Add event",
-                function(e, obj) { addNode(NodeType.event); },
-                function(o) { return true; })*/
         );
 
 
@@ -595,7 +686,8 @@ function init_diagram() {
                     { category: "simu_event", items: [ "event 1", "event 2" ], color: "white" },
                     { category: "action", text: "action", color: "white" },
                     { category: "cpt", text: "cpt", color: "white" },
-                    { category: "hnt", text: "hnt", color: "white" }
+                    { category: "hnt", text: "hnt", color: "white" },
+                    { category: "or", color: "white" }
                 ])
             });
 
@@ -631,7 +723,8 @@ function init_diagram() {
 
     function set_layout_options() {
         var lay = myDiagram.layout;
-
+        lay.setsPortSpot = false;
+        lay.setsChildPortSpot = false;
         lay.direction = 0;
         lay.layerSpacing = 60;
         lay.columnSpacing = 40;
@@ -642,8 +735,6 @@ function init_diagram() {
         lay.initializeOption = go.LayeredDigraphLayout.InitNaive;
         lay.aggressiveOption = go.LayeredDigraphLayout.AggressiveLess;
         lay.packOption = go.LayeredDigraphLayout.PackMedian;
-
-        lay.setsPortSpots = true;
     }
 
 
