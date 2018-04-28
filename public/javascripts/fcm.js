@@ -348,21 +348,18 @@ function init_diagram() {
         $(go.Adornment, "Vertical",
             makeButton("Add difficulty",
                 function(e, obj) {
-                   var contextmenu = obj.part;  // the Button is in the context menu Adornment
-                    var part = contextmenu.adornedPart;  // the adornedPart is the Part that the context menu adorns
+                   var part = obj.part;  // the Button is in the context menu Adornment
                     myDiagram.model.setDataProperty(part.data, "difficulty", part.data.difficulty+"+");
                 },
                 function(o) { return true; }),
             makeButton("Remove difficulty",
                 function(e, obj) {
-                    var contextmenu = obj.part;  // the Button is in the context menu Adornment
-                    var part = contextmenu.adornedPart;  // the adornedPart is the Part that the context menu adorns
+                    var part = obj.part;  // the Button is in the context menu Adornment
                     var new_str = part.data.difficulty.substr(0,part.data.difficulty.length-1);
                     myDiagram.model.setDataProperty(part.data, "difficulty", new_str);
                 },
                 function(obj) {
-                    var contextmenu = obj.part;  // the Button is in the context menu Adornment
-                    var part = contextmenu.adornedPart;  // the adornedPart is the Part that the context menu adorns
+                    var part = obj.part;  // the Button is in the context menu Adornment
                     return part.data.difficulty.length > 0;
                 })
         );
@@ -426,19 +423,6 @@ function init_diagram() {
             )
         );
 
-    function portStyleGate(input) {
-        return {
-            desiredSize: new go.Size(6, 6),
-            fill: null,
-            stroke: null,
-            fromSpot: go.Spot.Right,
-            fromLinkable: !input,
-            toSpot: go.Spot.Left,
-            toLinkable: input,
-            toMaxLinks: 1,
-            cursor: "pointer"
-        };
-    }
 
     var or_template =
         $(go.Node, "Spot", nodeStyle(),
@@ -450,13 +434,7 @@ function init_diagram() {
                 fromLinkable: true,
                 toLinkable: true
             }),
-            $(go.TextBlock, {text:"or"}),
-            /*$(go.Shape, "Circle", portStyleGate(true),
-                {   portId: "a",
-                    alignment: new go.Spot(0.25, 0.5)
-                }),
-            $(go.Shape, "Circle", portStyleGate(false),
-                { portId: "b", alignment: new go.Spot(0.9, 0.5) })*/
+            $(go.TextBlock, {text:"or"})
         );
 
 
@@ -498,7 +476,7 @@ function init_diagram() {
                             editable: true},
                         new go.Binding("text", "text")),
                     $(go.TextBlock,
-                        {   margin: new go.Margin(4, 0, 0, 0),
+                        {   margin: new go.Margin(4, 4, 0, 0),
                             font: "bold 15px sans-serif",
                             stroke: "red",
                             editable: false},
@@ -539,13 +517,22 @@ function init_diagram() {
                     {
                         itemTemplate:
                             $(go.Panel, "Auto",
-                                { margin: 2 },
+                                { margin: 2, contextMenu: partContextMenu},
                                 $(go.Shape, "RoundedRectangle",
                                     { fill: "white" }),
-                                $(go.TextBlock,
-                                    { margin: 5,
-                                        font: "15px sans-serif",
-                                        editable: true}, new go.Binding("text", ""))
+                                $(go.Panel, "Horizontal",
+                                    $(go.TextBlock,
+                                        { margin: 5,
+                                            font: "15px sans-serif",
+                                            editable: true}, new go.Binding("text", "text")),
+                                    $(go.TextBlock,
+                                        {   margin: new go.Margin(4, 4, 0, 0),
+                                            font: "bold 15px sans-serif",
+                                            stroke: "red",
+                                            editable: false},
+                                        new go.Binding("text", "difficulty"),
+                                        new go.Binding("visible", "difficulty", function(v) { return v != ""; }))
+                                )
                             )
                     }),
                 $(go.Panel, "Horizontal",
@@ -683,7 +670,7 @@ function init_diagram() {
                 model: new go.GraphLinksModel([  // specify the contents of the Palette
                     { category: "state", text: "state", color: "white" },
                     { category: "event", text: "event", color: "white", difficulty: "" },
-                    { category: "simu_event", items: [ "event 1", "event 2" ], color: "white" },
+                    { category: "simu_event", items: [ {text: "event 1", difficulty: ""}, {text: "event 2", difficulty: ""} ], color: "white" },
                     { category: "action", text: "action", color: "white" },
                     { category: "cpt", text: "cpt", color: "white" },
                     { category: "hnt", text: "hnt", color: "white" },
