@@ -24,7 +24,9 @@ jQuery(function($) {
             if (selected_li == li || $("#target").is(":input")) return;
 
             if (fcms && fcm_name in fcms) {  myDiagram.model = go.Model.fromJson(fcms[fcm_name]); }
-            else  { myDiagram.model = new go.GraphLinksModel(); }
+            else  { myDiagram.model = new go.GraphLinksModel();
+                    myDiagram.model.copiesArrays = true;
+                    myDiagram.model.copiesArrayObjects = true; }
 
             selected_li = li;
             $("#list_fcm li").each(function () {
@@ -214,7 +216,7 @@ jQuery(function($) {
 function init_diagram() {
 
     var $ = go.GraphObject.make;
-    var NodeType = {"state":1, "event":2, "action":3};
+    var NodeType = {"state":1, "event":2, "action":3, "comment":4};
 
     myDiagram =
         $(go.Diagram, "myDiagramDiv",  // create a Diagram for the DIV HTML element
@@ -248,6 +250,7 @@ function init_diagram() {
 
     myDiagram.addDiagramListener("AnimationFinished", function (evt) {
         if (redraw_required) {
+            myDiagram.startTransaction("Relink");
             var links = myDiagram.model.linkDataArray;
             var tmp_links = [];
             for (var lnk in links) {
@@ -261,11 +264,7 @@ function init_diagram() {
             {
                 myDiagram.model.addLinkData(tmp_links[ll]);
             }
-            //myDiagram.model.removeLinkData();
-           /* var fcm_tmp = myDiagram.model.toJson();
-            myDiagram.model = new go.GraphLinksModel();
-            myDiagram.model = go.Model.fromJson(fcm_tmp);
-            myDiagram.animationManager.stopAnimation();*/
+            myDiagram.commitTransaction("Relink");
         }
     });
 
@@ -338,6 +337,11 @@ function init_diagram() {
         {
             data = {category: "action", text: "state", color: "white" }
         }
+       /* else if (type == NodeType.comment)
+        {
+            data = {key: "A comment", text: "comment\nabout Alpha", category: "Comment"};
+            myDiagram.model.addLinkData({from: "A comment", to:-1, category: "Comment"});
+        }*/
         myDiagram.model.addNodeData(data);
         part = myDiagram.findPartForData(data);
         part.location = myDiagram.toolManager.contextMenuTool.mouseDownPoint;
@@ -402,8 +406,8 @@ function init_diagram() {
                 $(go.TextBlock,
                     { margin: 2,
                         font: "15px sans-serif",
-                        editable: true},
-                    new go.Binding("text", "text"))
+                        editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
+                    new go.Binding("text", "text").makeTwoWay())
             )
         );
 
@@ -418,8 +422,8 @@ function init_diagram() {
                 $(go.TextBlock,
                     { margin: 3,
                         font: "15px sans-serif",
-                        editable: true},
-                    new go.Binding("text", "text"))
+                        editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
+                    new go.Binding("text", "text").makeTwoWay())
             )
         );
 
@@ -451,8 +455,8 @@ function init_diagram() {
                 $(go.TextBlock,
                     { margin: 8,
                         font: "15px sans-serif",
-                        editable: true},
-                    new go.Binding("text", "text"))
+                        editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
+                    new go.Binding("text", "text").makeTwoWay())
             )
             // four named ports, one on each side:
             /*makePort("T", go.Spot.Top, true, true),
@@ -473,8 +477,8 @@ function init_diagram() {
                     $(go.TextBlock,
                         { margin: 5,
                             font: "15px sans-serif",
-                            editable: true},
-                        new go.Binding("text", "text")),
+                            editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
+                        new go.Binding("text", "text").makeTwoWay()),
                     $(go.TextBlock,
                         {   margin: new go.Margin(4, 4, 0, 0),
                             font: "bold 15px sans-serif",
@@ -500,8 +504,8 @@ function init_diagram() {
                 $(go.TextBlock,
                     { margin: 5,
                         font: "15px sans-serif",
-                        editable: true},
-                    new go.Binding("text", "text"))
+                        editable: true, width: 110, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
+                    new go.Binding("text", "text").makeTwoWay())
             )
         );
 
@@ -524,7 +528,8 @@ function init_diagram() {
                                     $(go.TextBlock,
                                         { margin: 5,
                                             font: "15px sans-serif",
-                                            editable: true}, new go.Binding("text", "text")),
+                                            editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
+                                        new go.Binding("text", "text").makeTwoWay()),
                                     $(go.TextBlock,
                                         {   margin: new go.Margin(4, 4, 0, 0),
                                             font: "bold 15px sans-serif",
@@ -594,6 +599,21 @@ function init_diagram() {
     templmap.add("cpt", cpt_template);
     templmap.add("or", or_template);
     myDiagram.nodeTemplateMap = templmap;
+    myDiagram.nodeTemplateMap.add("Comment",
+        $(go.Node,  // this needs to act as a rectangular shape for BalloonLink,
+            { background: "transparent" },  // which can be accomplished by setting the background.
+            $(go.TextBlock,
+                { stroke: "brown", margin: 3 },
+                new go.Binding("text"))
+        ));
+
+    myDiagram.linkTemplateMap.add("Comment",
+        // if the BalloonLink class has been loaded from the Extensions directory, use it
+        $((typeof BalloonLink === "function" ? BalloonLink : go.Link),
+            $(go.Shape,  // the Shape.geometry will be computed to surround the comment node and
+                // point all the way to the commented node
+                { stroke: "brown", strokeWidth: 1, fill: "lightyellow" })
+        ));
 
 
     // The link shape and arrowhead have their stroke brush data bound to the "color" property
@@ -658,7 +678,6 @@ function init_diagram() {
     var linkDataArray = [
     ];
     myDiagram.model = new go.GraphLinksModel(nodeDataArray, linkDataArray);
-
 
     // initialize the Palette that is on the left side of the page
     myPalette =
