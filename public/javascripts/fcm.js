@@ -163,6 +163,20 @@ jQuery(function($) {
         save_fcm(selected_li.find('#fcm_txt').text());
     };
 
+    $("#download").click(function() {
+        var fcm_txt = myDiagram.model.toJson();
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(fcm_txt));
+        element.setAttribute('download', 'test.java');
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
+    });
+
     function load_fcms() {
 
         $.ajax({
@@ -188,7 +202,7 @@ jQuery(function($) {
 
     function init_list_fcms() {
         load_fcms();
-        document.getElementById("clickMe").onclick = function () {
+        document.getElementById("layout").onclick = function () {
             myDiagram.layoutDiagram(true);
             redraw_required = true;
         };
@@ -719,11 +733,6 @@ function init_diagram() {
         var templmap2 = templmap.copy();
         //templmap2.add("event", eventtemplate2);
         myPalette.nodeTemplateMap = templmap2;
-
-        function update_criteria()
-        {
-            alert(2);
-        }
     }
 
 
