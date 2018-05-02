@@ -140,6 +140,22 @@ jQuery(function($) {
         });
     }
 
+    function execute_fcm(fcm_name) {
+        $.ajax({
+            type: "POST",
+            url: "/execute_fcm",
+            data: {
+                fcm_name: fcm_name,
+            },
+            success: function (result) {
+                //
+            },
+            error: function (result) {
+                //
+            }
+        });
+    }
+
     function save_fcm(name) {
         $.ajax({
             type: "POST",
@@ -175,6 +191,10 @@ jQuery(function($) {
         element.click();
 
         document.body.removeChild(element);
+    });
+
+    $("#execute").click(function() {
+        execute_fcm(selected_li.find('#fcm_txt').text());
     });
 
     function load_fcms() {

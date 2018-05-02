@@ -1,20 +1,74 @@
 
-<div style="width: 45%; display: flex; justify-content: space-between">
+<div style="margin:auto; justify-content: space-between">
 <h1>{{title}}</h1>
-<div style="margin: 10px">
-    <input id="save_fcm" style="font-size: 20px; margin-right: 10px" type="button" value="Save FCM" />
-    <input id="layout" style="font-size: 20px; margin-top: 5px" type="button" value="Layout" /></div>
 </div>
 
-<div style="width: 80%; display: flex; justify-content: space-between">
-    <div id="myPaletteDiv" style="width: 120px; margin-right: 2px; background-color: white; border: solid 1px black">
+<div style="width: 1550px; height: 520px; display: flex; margin:auto; justify-content: space-between">
+    <div class="panel stitch" style="width: 160px; ">
+    <div id="myPaletteDiv" style=" height: 100%; background-color: white;">
     </div>
-    <div id="myDiagramDiv" style="flex-grow: 1; width: 600px; height: 520px; border: solid 1px black"></div>
-    <div id="list_fcms" style="width: 350px; margin-left: 2px; background-color: white; border: solid 1px black">
+    </div>
+    <div class="panel stitch" style="width: 65%">
+        <div id="myDiagramDiv" style="flex-grow: 1; width: 100%; height: 100%; background-color: white;"></div>
+    </div>
+    <div class="panel stitch" style="width: 370px; ">
+    <div id="list_fcms" class="alert alert-light" style="height: 95%; background: white; ">
+        <div style="margin: 10px 10px 10px 60px;">
+            <input id="save_fcm" style="font-size: 20px; margin-right: 10px" type="button" value="Save FCM" />
+            <input id="layout" style="font-size: 20px; margin-top: 5px" type="button" value="Layout" />
+        </div>
         <h4 class="display-6">List of FCMs</h4>
         <ul id="list_fcm" class="list-group" />
     </div>
+    </div>
 </div>
+<div id="one" style="margin:auto;";>
+    <ol>
+        <li>
+            <h2><span>User instructions</span></h2>
+            <div class="alert alert-light" role="alert" style="font: 14px/24px 'Helvetica Neue', Arial, sans-serif; ">
+                <ul>
+                    <li>The current FCM you are editing is the green FCM of the right list</li>
+                    <li>All FCMs are saved on the server so that they are accessible to everyone from everywhere</li>
+                    <li><mark>Save your current FCM</mark> at any time by clicking on the Save FCM button</li>
+                    <li><mark>Create a node</mark>: simply drag and drop a nnode from the left panel</li>
+                    <li><mark>Create a link</mark>: click on the border of a node and release the click on another node</li>
+                    <li><mark>Create simultaneous events</mark> by using the node with 2 events (you can add more than 2 events with the plus or minus buttons)</li>
+                    <li><mark>Turn a link to negation</mark>with a right click on an existing link</li>
+                    <li><mark>Rename a node</mark> by double clicking on its name and press enter</li>
+                    <li><mark>Add or remove criteria</mark>: right click on an event node</li>
+                </ul>
+            </div>
+        </li>
+        <li>
+            <h2><span>Shortcuts / Commands</span></h2>
+            <div class="alert alert-light" role="alert" style="font: 14px/24px 'Helvetica Neue', Arial, sans-serif; ">
+                <ul>
+                    <li>Undo <mark>Ctrl+z</mark> / Redo <mark>Ctrl+y</mark></li>
+                    <li>The <mark>Layout</mark> button automatically arranges nodes of your FCM</li>
+                    <li><mark>Rename</mark> a FCM with the first button of the FCM name in the list</li>
+                    <li><mark>Delete</mark> a FCM with the cross button of the FCM name in the list</li>
+                </ul>
+            </div>
+        </li>
+        <li>
+            <h2><span>Execute FCM</span></h2>
+            <div>
+
+            </div>
+        </li>
+    </ol>
+    <noscript>
+        <p>Please enable JavaScript to get the full experience.</p>
+    </noscript>
+</div>
+<a href="#">
+    <img src="images/download.png" id="download"></img>
+    <img src="images/download.png" id="execute"></img>
+</a>
+
+
+<!--
 
 <div style="width: 80%; display: flex; justify-content: space-between" >
     <div style="width: 65%; margin-left: 2px; margin-top: 2px; background-color: white; border: solid 1px black">
@@ -43,32 +97,6 @@
                 <li>The <mark>Layout</mark> button automatically arranges nodes of your FCM</li>
                 <li><mark>Rename</mark> a FCM with the first button of the FCM name in the list</li>
                 <li><mark>Delete</mark> a FCM with the cross button of the FCM name in the list</li>
-            </ul>
-        </div>
-    </div>
-</div>
-<a href="#">
-    <img src="images/download.png" id="download"></img>
-</a>
-<!--
-<div class="accordion" id="accordion" style="width: 65%;">
-    <div class="card">
-        <div class="alert alert-light" role="alert" id="headingOne"  data-toggle="collapse" data-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
-            <h4 class="alert-heading">Usage:</h4>
-        </div>
-
-        <div id="collapseOne" class="collapse show" aria-labelledby="headingOne" data-parent="#accordion">
-            <hr>
-            <ul>
-                <li>The current FCM you are editing is the green FCM of the right list</li>
-                <li>All FCMs are saved on the server so that they are accessible to everyone from everywhere</li>
-                <li><mark>Save your current FCM</mark> at any time by clicking on the Save FCM button</li>
-                <li><mark>Create a node</mark>: simply drag and drop a nnode from the left panel</li>
-                <li><mark>Create a link</mark>: click on the border of a node and release the click on another node</li>
-                <li><mark>Create simultaneous events</mark> by using the node with 2 events (you can add more than 2 events with the plus or minus buttons)</li>
-                <li><mark>Turn a link to negation</mark>with a right click on an existing link</li>
-                <li><mark>Rename a node</mark> by double clicking on its name and press enter</li>
-                <li><mark>Add or remove criteria</mark>: right click on an event node</li>
             </ul>
         </div>
     </div>

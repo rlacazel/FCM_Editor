@@ -8,6 +8,9 @@ var bodyParser = require('body-parser');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json()); // this is used for parsing the JSON object from POST
 
+var java_process = require('java_process');
+
+var fs = require('fs');
 
 var store = require('data-store')('fcms', {
     cwd: 'fcms.dat'
@@ -54,5 +57,27 @@ router.post('/rename_fcm', function (req, res) {
         res.render('index', {title: 'FCM Editor'});
     }
 });
+
+router.post('/execute_fcm', function (req, res) {
+    var fcm_name = req.body.fcm_name;
+    if(store.has(fcm_name))
+    {
+        fs.writeFile('fcm.json', store.get(fcm_name), function (err) {
+            if (err) throw err;
+            console.log('Saved!');
+        });
+
+        var exec = require('child_process').exec, child;
+        child = exec('java -jar ActuPlan.jar -testfcm fcm.json',
+            function (error, stdout, stderr){
+                console.log('stdout: ' + stdout);
+                if(error !== null){
+                    console.log('exec error: ' + error);
+                }
+            });
+    }
+    res.render('index', {title: 'FCM Editor'});
+});
+
 
 module.exports = router;

@@ -1,0 +1,31 @@
+{ "class": "go.GraphLinksModel",
+  "copiesArrays": true,
+  "copiesArrayObjects": true,
+  "nodeDataArray": [ 
+{"category":"state", "text":"PVA needs perfusion", "color":"white", "key":-1, "loc":"54.21777343750159 56.383249921028955"},
+{"category":"event", "text":"No more product", "color":"white", "difficulty":"", "key":-2, "loc":"253.66840617102974 16.38324992102892"},
+{"category":"event", "text":"PVA takes wrong product", "color":"white", "difficulty":"", "key":-3, "loc":"253.6684061710293 136.383249921029"},
+{"category":"action", "text":"PVA perfuses the victim", "color":"white", "key":-4, "loc":"472.5121564100087 56.38324992102897"},
+{"category":"event", "text":"State of the victim deteriorates", "color":"white", "difficulty":"", "key":-5, "loc":"693.9926253989878 56.38324992102895"},
+{"category":"state", "text":"PVA unskilled", "color":"white", "key":-6, "loc":"54.2177734375 216.38324992102898"},
+{"category":"event", "text":"PVA wrongly applies the tourniquet", "color":"white", "difficulty":"", "key":-7, "loc":"472.5121564100088 176.3832499210289"},
+{"category":"state", "text":"Victim needs tourniquet", "color":"white", "key":-9, "loc":"54.2177734375 336.38324992102895"},
+{"category":"action", "text":"PVA takes tourniquet", "color":"white", "key":-10, "loc":"253.668406171029 336.38324992102895"},
+{"category":"event", "text":"Commit a flawed tourniquet ", "color":"white", "difficulty":"", "key":-11, "loc":"472.51215641000823 296.3832499210288"},
+{"category":"action", "text":"PVA applies tourniquet", "color":"white", "key":-12, "loc":"693.9926253989881 296.38324992102895"},
+{"category":"event", "text":"Victim bleeds more", "color":"white", "difficulty":"", "key":-13, "loc":"894.5889592254211 296.38324992102895"}
+ ],
+  "linkDataArray": [ 
+{"from":-1, "to":-2},
+{"from":-1, "to":-3},
+{"from":-3, "to":-4},
+{"from":-4, "to":-5},
+{"from":-6, "to":-7},
+{"from":-6, "to":-11, "label":"not", "visible":true},
+{"from":-9, "to":-10},
+{"from":-10, "to":-11},
+{"from":-10, "to":-7},
+{"from":-11, "to":-12},
+{"from":-12, "to":-13},
+{"from":-6, "to":-3}
+ ]}
