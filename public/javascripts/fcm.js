@@ -39,6 +39,8 @@ jQuery(function($) {
 
             // update checkbox
             var state_container = $("#world_state");
+            state_container.empty();
+            $("#list_fcm_res").empty();
             for(var node_id in myDiagram.model.nodeDataArray)
             {
                 if(myDiagram.model.nodeDataArray[node_id].category == "state")
@@ -178,7 +180,19 @@ jQuery(function($) {
                 input_params: JSON.stringify(params),
             },
             success: function (result) {
-                $("#fcm_res").html(result);
+                var list = $("#list_fcm_res");
+                list.empty();
+                var alternatives = result.split('\n');
+                for (var id in alternatives)
+                {
+                    if (alternatives[id].trim())
+                    {
+                        var li = $("<li></li>");
+                        //button_delete.attr("type", "button");
+                        li.text(alternatives[id]);
+                        list.append(li);
+                    }
+                }
             },
             error: function (result) {
                 //
