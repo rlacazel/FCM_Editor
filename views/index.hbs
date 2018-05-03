@@ -44,7 +44,9 @@
             <h2><span>Shortcuts / Commands</span></h2>
             <div class="alert alert-light" role="alert" style="font: 14px/24px 'Helvetica Neue', Arial, sans-serif; ">
                 <ul>
-                    <li>Undo <mark>Ctrl+z</mark> / Redo <mark>Ctrl+y</mark></li>
+                    <li>Use <mark>Ctrl+z</mark> to undo and <mark>Ctrl+y</mark> to redo</li>
+                    <li>Use <mark>Ctrl+Mouse Wheel</mark> to Zoom</li>
+                    <li>Maintain <mark>Left Mouse Button</mark> outside node to move the graph</li>
                     <li>The <mark>Layout</mark> button automatically arranges nodes of your FCM</li>
                     <li><mark>Rename</mark> a FCM with the first button of the FCM name in the list</li>
                     <li><mark>Delete</mark> a FCM with the cross button of the FCM name in the list</li>
@@ -53,8 +55,17 @@
         </li>
         <li>
             <h2><span>Execute FCM</span></h2>
-            <div>
-
+            <div class="row">
+                <div class="col-3" id="world_state">
+                    <h3 class="text-center">World state</h3>
+                </div>
+                <div class="col-1 align-self-center" >
+                    <a href="#"><img src="images/run.png" id="run_fcm" style=""/></a>
+                </div>
+                <div class="col-7">
+                    <h3 class="text-center">Alternatives</h3>
+                    <span id="fcm_res"></span>
+                </div>
             </div>
         </li>
     </ol>

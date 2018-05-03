@@ -36,6 +36,35 @@ jQuery(function($) {
             $("#list_fcm li").each(function () {
                 $(this).find('#unsaved_label').css("visibility", "hidden");
             });
+
+            // update checkbox
+            var state_container = $("#world_state");
+            for(var node_id in myDiagram.model.nodeDataArray)
+            {
+                if(myDiagram.model.nodeDataArray[node_id].category == "state")
+                {
+                    var name = myDiagram.model.nodeDataArray[node_id].text;
+
+                    var div = $("<div></div>");
+                    div.attr("class", "form-check");
+
+                    var label = $("<label></label>");
+                    div.append(label);
+
+                    var input = $("<input></input>");
+                    input.attr("type", "checkbox");
+                    input.attr("id", name);
+
+                    var span = $("<span></span>");
+                    span.attr("class", "label-text");
+                    span.html(name);
+
+                    label.append(input);
+                    label.append(span);
+
+                    state_container.append(div);
+                }
+            }
         });
 
         if (add_before) { ul.prepend(li);}
@@ -140,15 +169,16 @@ jQuery(function($) {
         });
     }
 
-    function execute_fcm(fcm_name) {
+    function execute_fcm(fcm_name, params) {
         $.ajax({
             type: "POST",
             url: "/execute_fcm",
             data: {
                 fcm_name: fcm_name,
+                input_params: JSON.stringify(params),
             },
             success: function (result) {
-                //
+                $("#fcm_res").html(result);
             },
             error: function (result) {
                 //
@@ -193,8 +223,17 @@ jQuery(function($) {
         document.body.removeChild(element);
     });
 
-    $("#execute").click(function() {
-        execute_fcm(selected_li.find('#fcm_txt').text());
+    $("#run_fcm").click(function() {
+        var params = {};
+        var inputs = $("#world_state :input");
+        for(var input_id in inputs)
+        {
+            if(inputs[input_id].checked)
+            {
+                params[inputs[input_id].id] = 1;
+            }
+        }
+        execute_fcm(selected_li.find('#fcm_txt').text(), params);
     });
 
     function load_fcms() {

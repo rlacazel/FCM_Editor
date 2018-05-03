@@ -60,23 +60,31 @@ router.post('/rename_fcm', function (req, res) {
 
 router.post('/execute_fcm', function (req, res) {
     var fcm_name = req.body.fcm_name;
+    var input_params = req.body.input_params;
+    console.log(input_params);
     if(store.has(fcm_name))
     {
-        fs.writeFile('fcm.json', store.get(fcm_name), function (err) {
-            if (err) throw err;
-            console.log('Saved!');
+        var fcm_json = JSON.parse(store.get(fcm_name));
+        fcm_json['inputs'] = JSON.parse(input_params);
+        fs.writeFile('fcm.json', JSON.stringify(fcm_json), function (err) {
+            if (err) {
+                res.status(500).send('Error writing json file: ' + err);
+            }
         });
 
         var exec = require('child_process').exec, child;
         child = exec('java -jar ActuPlan.jar -testfcm fcm.json',
             function (error, stdout, stderr){
-                console.log('stdout: ' + stdout);
                 if(error !== null){
-                    console.log('exec error: ' + error);
+                    res.status(500).send('Error executing jar: ' + error);
+                }
+                else
+                {
+                    res.send(stdout);
                 }
             });
     }
-    res.render('index', {title: 'FCM Editor'});
+    //res.render('index', {title: 'FCM Editor'});
 });
 
 
