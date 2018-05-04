@@ -46,6 +46,7 @@ jQuery(function($) {
                 if(myDiagram.model.nodeDataArray[node_id].category == "state")
                 {
                     var name = myDiagram.model.nodeDataArray[node_id].text;
+                    var key = myDiagram.model.nodeDataArray[node_id].key;
 
                     var div = $("<div></div>");
                     div.attr("class", "form-check");
@@ -55,7 +56,7 @@ jQuery(function($) {
 
                     var input = $("<input></input>");
                     input.attr("type", "checkbox");
-                    input.attr("id", name);
+                    input.attr("id", key);
 
                     var span = $("<span></span>");
                     span.attr("class", "label-text");
@@ -80,11 +81,11 @@ jQuery(function($) {
         var oriVal, input;
 
         // Modification flag label
-        var unsaved = document.createElement("small");
-        unsaved.setAttribute("class", "text-muted");
-        unsaved.setAttribute("style", "margin-right: 5px; visibility:hidden;");
-        unsaved.setAttribute("id", "unsaved_label");
-        unsaved.textContent = "(unsaved)";
+        var unsaved = $("<small></small>");
+        unsaved.attr("class", "text-muted");
+        unsaved.attr("style", "margin-right: 5px; visibility:hidden;");
+        unsaved.attr("id", "unsaved_label");
+        unsaved.html("(unsaved)");
         div.append(unsaved);
 
         // rename button
@@ -182,16 +183,28 @@ jQuery(function($) {
             success: function (result) {
                 var list = $("#list_fcm_res");
                 list.empty();
-                var alternatives = result.split('\n');
-                for (var id in alternatives)
-                {
-                    if (alternatives[id].trim())
-                    {
-                        var li = $("<li></li>");
-                        //button_delete.attr("type", "button");
-                        li.text(alternatives[id]);
-                        list.append(li);
-                    }
+                var json_alter = JSON.parse(result)
+                for (var id in json_alter) {
+                    var name = json_alter[id].name;
+                    var keys = json_alter[id].keys;
+
+                    var li = $("<li></li>");
+                    li.hover(function() {
+                        $(this).attr("style", "cursor:pointer");
+                    });
+                    li.attr("id",JSON.stringify(keys));
+                    li.text(name);
+                    li.on("click", function(){
+                        var keys = JSON.parse(this.id);
+                        for(var node_id in myDiagram.model.nodeDataArray)
+                        {
+                            if ($.inArray(myDiagram.model.nodeDataArray[node_id].key,keys) >= 0)
+                            {
+                                myDiagram.model.nodeDataArray[node_id].color = "green";
+                            }
+                        }
+                    });
+                    list.append(li);
                 }
             },
             error: function (result) {
