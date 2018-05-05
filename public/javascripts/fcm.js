@@ -8,8 +8,8 @@ jQuery(function($) {
     function add_fcm_in_list_ui(fcm_name, add_before) {
         var ul = $("#list_fcm");
         var li = $("<li></li>");
-        li.attr("class", "list-group-item d-flex justify-content-between align-items-center");
-        li.attr("style", "cursor:pointer");
+        li.attr("class", "list-group-item d-flex justify-content-between align-items-center rounded-0");
+        li.attr("style", "cursor:pointer; margin-right: -21px; margin-left: -21px");
         var span_text = document.createElement("small");
         span_text.setAttribute("class", "text-muted");
         span_text.setAttribute("id", "fcm_txt");
@@ -196,13 +196,30 @@ jQuery(function($) {
                     li.text(name);
                     li.on("click", function(){
                         var keys = JSON.parse(this.id);
+                        myDiagram.startTransaction("change color");
                         for(var node_id in myDiagram.model.nodeDataArray)
                         {
                             if ($.inArray(myDiagram.model.nodeDataArray[node_id].key,keys) >= 0)
                             {
-                                myDiagram.model.nodeDataArray[node_id].color = "green";
+                                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", "green");
+                            }
+                            else
+                            {
+                                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", "black");
                             }
                         }
+                        for(var link_id in myDiagram.model.linkDataArray)
+                        {
+                            if ($.inArray(myDiagram.model.linkDataArray[link_id].from, keys) >= 0 && $.inArray(myDiagram.model.linkDataArray[link_id].to, keys) >= 0)
+                            {
+                                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", "green");
+                            }
+                            else
+                            {
+                                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", "black");
+                            }
+                        }
+                        myDiagram.commitTransaction("change color");
                     });
                     list.append(li);
                 }
@@ -388,16 +405,6 @@ function init_diagram() {
     ];
     }
 
-    function showSmallPorts(node, show) {
-        node.ports.each(function(port) {
-            if (port.portId !== "") {  // don't change the default port, which is the big shape
-                port.fill = show ? "rgba(0,0,0,.3)" : null;
-            }
-        });
-    }
-
-
-
     // To simplify this code we define a function for creating a context menu button:
     function makeButton(text, action, visiblePredicate) {
         return $("ContextMenuButton",
@@ -501,13 +508,14 @@ function init_diagram() {
             $(go.Panel, "Auto",
                 $(go.Shape, "Diamond", {geometryStretch: go.GraphObject.Uniform, portId: "",
                         fromLinkable: true,
-                        toLinkable: true},
-                    new go.Binding("fill", "color")),
+                        toLinkable: true,
+                        fill: "white"},
+                    new go.Binding("stroke", "color")),
                 $(go.TextBlock,
                     { margin: 2,
                         font: "15px sans-serif",
                         editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
-                    new go.Binding("text", "text").makeTwoWay())
+                    new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color"))
             )
         );
 
@@ -517,13 +525,14 @@ function init_diagram() {
                 $(go.Shape, "TriangleUp",
                     {portId: "",
                         fromLinkable: true,
-                        toLinkable: true},
-                    new go.Binding("fill", "color")),
+                        toLinkable: true,
+                        fill: "white"},
+                    new go.Binding("stroke", "color")),
                 $(go.TextBlock,
                     { margin: 3,
                         font: "15px sans-serif",
                         editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
-                    new go.Binding("text", "text").makeTwoWay())
+                    new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color"))
             )
         );
 
@@ -550,13 +559,13 @@ function init_diagram() {
                     fromLinkable: true,
                     fromSpot: go.Spot.None,
                     toSpot: go.Spot.None,
-                    toLinkable: true},
-                    new go.Binding("fill", "color")),
+                    toLinkable: true, fill: "white"},
+                    new go.Binding("stroke", "color")),
                 $(go.TextBlock,
                     { margin: 8,
                         font: "15px sans-serif",
                         editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
-                    new go.Binding("text", "text").makeTwoWay())
+                    new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color"))
             )
             // four named ports, one on each side:
             /*makePort("T", go.Spot.Top, true, true),
@@ -571,14 +580,15 @@ function init_diagram() {
                 $(go.Shape, "RoundedRectangle",
                     {portId: "",
                         fromLinkable: true,
-                        toLinkable: true},
-                    new go.Binding("fill", "color")),
+                        toLinkable: true,
+                        fill: "white"},
+                    new go.Binding("stroke", "color")),
                 $(go.Panel, "Horizontal",
                     $(go.TextBlock,
                         { margin: 5,
                             font: "15px sans-serif",
                             editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
-                        new go.Binding("text", "text").makeTwoWay()),
+                        new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color")),
                     $(go.TextBlock,
                         {   margin: new go.Margin(4, 4, 0, 0),
                             font: "bold 15px sans-serif",
@@ -599,13 +609,14 @@ function init_diagram() {
                 $(go.Shape, "Ellipse",
                     {portId: "",
                         fromLinkable: true,
-                        toLinkable: true},
-                    new go.Binding("fill", "color")),
+                        toLinkable: true,
+                        fill: "white"},
+                    new go.Binding("stroke", "color")),
                 $(go.TextBlock,
                     { margin: 5,
                         font: "15px sans-serif",
                         editable: true, width: 110, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
-                    new go.Binding("text", "text").makeTwoWay())
+                    new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color"))
             )
         );
 
@@ -787,13 +798,13 @@ function init_diagram() {
                 contentAlignment: go.Spot.Center,
                 nodeTemplateMap: myDiagram.nodeTemplateMap,  // share the templates used by myDiagram
                 model: new go.GraphLinksModel([  // specify the contents of the Palette
-                    { category: "state", text: "state", color: "white" },
-                    { category: "event", text: "event", color: "white", difficulty: "" },
-                    { category: "simu_event", items: [ {text: "event 1", difficulty: ""}, {text: "event 2", difficulty: ""} ], color: "white" },
-                    { category: "action", text: "action", color: "white" },
-                    { category: "cpt", text: "cpt", color: "white" },
-                    { category: "hnt", text: "hnt", color: "white" },
-                    { category: "or", color: "white" }
+                    { category: "state", text: "state", color: "black" },
+                    { category: "event", text: "event", color: "black", difficulty: "" },
+                    { category: "simu_event", items: [ {text: "event 1", difficulty: ""}, {text: "event 2", difficulty: ""} ], color: "black" },
+                    { category: "action", text: "action", color: "black" },
+                    { category: "cpt", text: "cpt", color: "black" },
+                    { category: "hnt", text: "hnt", color: "black" },
+                    { category: "or", color: "black" }
                 ])
             });
 

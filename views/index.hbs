@@ -14,8 +14,8 @@
     <div class="panel stitch" style="width: 370px; ">
     <div id="list_fcms" class="alert alert-light" style="height: 95%; background: white; ">
         <div style="margin: 10px 10px 10px 60px;">
-            <input id="save_fcm" style="font-size: 20px; margin-right: 10px" type="button" value="Save FCM" />
-            <input id="layout" style="font-size: 20px; margin-top: 5px" type="button" value="Layout" />
+            <button id="save_fcm" type="button" class="btn btn-outline-secondary">Save FCM</button>
+            <button id="layout" type="button" class="btn btn-outline-secondary">Layout</button>
         </div>
         <h4 class="display-6">List of FCMs</h4>
         <ul id="list_fcm" class="list-group" />
@@ -37,6 +37,8 @@
                     <li><mark>Turn a link to negation</mark>with a right click on an existing link</li>
                     <li><mark>Rename a node</mark> by double clicking on its name and press enter</li>
                     <li><mark>Add or remove criteria</mark>: right click on an event node</li>
+                    <li><mark>AND gate </mark>: by default all incoming links of a node are AND</li>
+                    <li><mark>OR gate</mark>: you can use the OR node to make incoming links OR</li>
                 </ul>
             </div>
         </li>
