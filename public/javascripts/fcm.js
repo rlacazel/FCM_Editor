@@ -13,7 +13,7 @@ jQuery(function($) {
         var span_text = document.createElement("small");
         span_text.setAttribute("class", "text-muted");
         span_text.setAttribute("id", "fcm_txt");
-        span_text.setAttribute("style", "max-width: 180px; word-wrap: break-word;");
+        span_text.setAttribute("style", "max-width: 230px; word-wrap: break-word;");
         span_text.textContent = fcm_name;
         li.append(span_text);
 
@@ -37,43 +37,48 @@ jQuery(function($) {
                 $(this).find('#unsaved_label').css("visibility", "hidden");
             });
 
-            // update checkbox
-            var state_container = $("#world_state");
-            state_container.empty();
-            $("#list_fcm_res").empty();
-            for(var node_id in myDiagram.model.nodeDataArray)
-            {
-                if(myDiagram.model.nodeDataArray[node_id].category == "state")
-                {
-                    var name = myDiagram.model.nodeDataArray[node_id].text;
-                    var key = myDiagram.model.nodeDataArray[node_id].key;
-
-                    var div = $("<div></div>");
-                    div.attr("class", "form-check");
-
-                    var label = $("<label></label>");
-                    div.append(label);
-
-                    var input = $("<input></input>");
-                    input.attr("type", "checkbox");
-                    input.attr("id", key);
-
-                    var span = $("<span></span>");
-                    span.attr("class", "label-text");
-                    span.html(name);
-
-                    label.append(input);
-                    label.append(span);
-
-                    state_container.append(div);
-                }
-            }
+            // update worldstate
+            update_world_state();
         });
 
         if (add_before) { ul.prepend(li);}
         else {ul.append(li);}
 
         return li;
+    }
+
+    function update_world_state()
+    {
+        var state_container = $("#world_state");
+        state_container.empty();
+        $("#list_fcm_res").empty();
+        for(var node_id in myDiagram.model.nodeDataArray)
+        {
+            if(myDiagram.model.nodeDataArray[node_id].category == "state")
+            {
+                var name = myDiagram.model.nodeDataArray[node_id].text;
+                var key = myDiagram.model.nodeDataArray[node_id].key;
+
+                var div = $("<div></div>");
+                div.attr("class", "form-check");
+
+                var label = $("<label></label>");
+                div.append(label);
+
+                var input = $("<input></input>");
+                input.attr("type", "checkbox");
+                input.attr("id", key);
+
+                var span = $("<span></span>");
+                span.attr("class", "label-text");
+                span.html(name);
+
+                label.append(input);
+                label.append(span);
+
+                state_container.append(div);
+            }
+        }
     }
 
     function add_list_button(li_item, span_text) {
@@ -196,30 +201,7 @@ jQuery(function($) {
                     li.text(name);
                     li.on("click", function(){
                         var keys = JSON.parse(this.id);
-                        myDiagram.startTransaction("change color");
-                        for(var node_id in myDiagram.model.nodeDataArray)
-                        {
-                            if ($.inArray(myDiagram.model.nodeDataArray[node_id].key,keys) >= 0)
-                            {
-                                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", "green");
-                            }
-                            else
-                            {
-                                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", "black");
-                            }
-                        }
-                        for(var link_id in myDiagram.model.linkDataArray)
-                        {
-                            if ($.inArray(myDiagram.model.linkDataArray[link_id].from, keys) >= 0 && $.inArray(myDiagram.model.linkDataArray[link_id].to, keys) >= 0)
-                            {
-                                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", "green");
-                            }
-                            else
-                            {
-                                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", "black");
-                            }
-                        }
-                        myDiagram.commitTransaction("change color");
+                        color_path(keys);
                     });
                     list.append(li);
                 }
@@ -230,7 +212,37 @@ jQuery(function($) {
         });
     }
 
+    function color_path(keys)
+    {
+        myDiagram.startTransaction("change color");
+        for(var node_id in myDiagram.model.nodeDataArray)
+        {
+            if ($.inArray(myDiagram.model.nodeDataArray[node_id].key,keys) >= 0)
+            {
+                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", "green");
+            }
+            else
+            {
+                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", "black");
+            }
+        }
+        for(var link_id in myDiagram.model.linkDataArray)
+        {
+            if ($.inArray(myDiagram.model.linkDataArray[link_id].from, keys) >= 0 && $.inArray(myDiagram.model.linkDataArray[link_id].to, keys) >= 0)
+            {
+                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", "green");
+            }
+            else
+            {
+                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", "black");
+            }
+        }
+        myDiagram.commitTransaction("change color");
+    }
+
     function save_fcm(name) {
+        // do not save green path
+        color_path({});
         $.ajax({
             type: "POST",
             url: "/save_fcm",
@@ -309,6 +321,9 @@ jQuery(function($) {
             myDiagram.layoutDiagram(true);
             redraw_required = true;
         };
+        document.getElementById("load_world_state").onclick = function () {
+            update_world_state();
+        };
     }
 
     function generate_default_fcm_name()
@@ -385,6 +400,56 @@ function init_diagram() {
         }
     });
 
+    // -----------------------------
+    // ---- Manage copy / paste -----
+    // -----------------------------
+    function DrawCommandHandler() {
+        go.CommandHandler.call(this);
+        this._arrowKeyBehavior = "move";
+        this._pasteOffset = new go.Point(10, 10);
+        this._lastPasteOffset = new go.Point(0, 0);
+    }
+    go.Diagram.inherit(DrawCommandHandler, go.CommandHandler);
+
+    myDiagram.commandHandler = new DrawCommandHandler();
+
+    Object.defineProperty(DrawCommandHandler.prototype, "pasteOffset", {
+        get: function() { return this._pasteOffset; },
+        set: function(val) {
+            if (!(val instanceof go.Point)) throw new Error("DrawCommandHandler.pasteOffset must be a Point, not: " + val);
+            this._pasteOffset.set(val);
+        }
+    });
+
+    DrawCommandHandler.prototype.copyToClipboard = function(coll) {
+        go.CommandHandler.prototype.copyToClipboard.call(this, coll);
+        this._lastPasteOffset.set(this.pasteOffset);
+    };
+
+    DrawCommandHandler.prototype.pasteFromClipboard = function() {
+        var coll = go.CommandHandler.prototype.pasteFromClipboard.call(this);
+        this.diagram.moveParts(coll, this._lastPasteOffset);
+        this._lastPasteOffset.add(this.pasteOffset);
+        return coll;
+    };
+    // -----------------------------
+    // ---- End copy / paste --------
+    // -----------------------------
+
+    myDiagram.commandHandler.doKeyDown = function() {
+        var e = myDiagram.lastInput;
+        // The meta (Command) key substitutes for "control" for Mac commands
+        var control = e.control || e.meta;
+        var key = e.key;
+        // Quit on any undo/redo key combination:
+        if (control && key === 'S') {
+            save_fcm(selected_li.find('#fcm_txt').text());
+        }
+        else {
+            // call base method with no arguments (default functionality)
+            go.CommandHandler.prototype.doKeyDown.call(this);
+        }
+    };
 
     function nodeStyle() {
         return [
@@ -554,17 +619,18 @@ function init_diagram() {
     var statetemplate =
         $(go.Node, "Spot", nodeStyle(),
             $(go.Panel, "Auto",
-                $(go.Shape, "Rectangle",
+                $(go.Shape, "Ellipse",
                     {portId: "",
                     fromLinkable: true,
                     fromSpot: go.Spot.None,
                     toSpot: go.Spot.None,
-                    toLinkable: true, fill: "white"},
+                    toLinkable: true, fill: "white",
+                        minSize: new go.Size(0, 38)},
                     new go.Binding("stroke", "color")),
                 $(go.TextBlock,
-                    { margin: 8,
+                    { margin: 2,
                         font: "15px sans-serif",
-                        editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
+                        editable: true, width: 125, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
                     new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color"))
             )
             // four named ports, one on each side:
@@ -606,14 +672,14 @@ function init_diagram() {
     var actiontemplate =
         $(go.Node, "Spot", nodeStyle(),
             $(go.Panel, "Auto",
-                $(go.Shape, "Ellipse",
+                $(go.Shape, "Rectangle",
                     {portId: "",
                         fromLinkable: true,
                         toLinkable: true,
                         fill: "white"},
                     new go.Binding("stroke", "color")),
                 $(go.TextBlock,
-                    { margin: 5,
+                    { margin: 7,
                         font: "15px sans-serif",
                         editable: true, width: 110, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
                     new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color"))
@@ -838,7 +904,7 @@ function init_diagram() {
         lay.setsPortSpot = false;
         lay.setsChildPortSpot = false;
         lay.direction = 0;
-        lay.layerSpacing = 60;
+        lay.layerSpacing = 50;
         lay.columnSpacing = 40;
 
         //lay.cycleRemoveOption = go.LayeredDigraphLayout.CycleDepthFirst;
@@ -849,82 +915,6 @@ function init_diagram() {
         lay.packOption = go.LayeredDigraphLayout.PackMedian;
     }
 
-
-    function generate_fcm_file()
-    {
-        var modelAsText = myDiagram.model.toJson();
-        //alert(modelAsText);
-        var fcm_name = $("#fcm_name").val();
-        save_new_fcm(fcm_name);
-        /*var text = `
-         package actuplan.fcms;
-
-         import java.util.Arrays;
-         import java.util.List;
-
-         import fcm.CognitiveMap;
-         import fcm.Concept;
-         import fcm.ConceptActivator;
-         import fcm.act.LinearActivator;
-         import fcm.act.SignumActivator;
-         import fcm.act.SignumActivator.Mode;
-         import fcm.conn.WeightedConnection;
-
-         public class ` + fcm_name + ` extends FcmInstance {
-
-         public medivac_called(List<String> params)
-         {
-         super(params);
-
-         map = new CognitiveMap("` + fcm_name + `");
-
-         LinearActivator lin = new LinearActivator(0,1,0,1);
-
-         ConceptActivator sig_pos = new SignumActivator(0);
-         ((SignumActivator) sig_pos).setMode(Mode.BINARY);
-
-         Concept total_victims = new Concept("total_victims", lin, true, true);
-         total_victims.setValues(0,  1, Arrays.asList("false", "true"));
-         map.addConcept(total_victims);
-
-         Concept add_victim = new Concept("add_victim", sig_pos, false, false);
-         add_victim.setValues(0,  1, Arrays.asList("false", "true"));
-         add_victim.setHasNoPrecondition();
-         map.addConcept(add_victim);
-
-         Concept medivac_called = new Concept("medivac_called", lin, true, true);
-         medivac_called.setValues(0,  1, Arrays.asList("false", "true"));
-         map.addConcept(medivac_called);
-
-         Concept medivac_arriving = new Concept("medivac_arriving", sig_pos, false, false);
-         medivac_arriving.setValues(0,  1, Arrays.asList("false", "true"));
-         map.addConcept(medivac_arriving);
-
-         int delay = 1;
-         map.addConnection(new WeightedConnection("total_victims -> add_victim", "", 1, 1));
-         //map.addConnection(new WeightedConnection("difficulty -> add_victim", "", 1, 1));
-         map.addConnection(new WeightedConnection("add_victim -> medivac_arriving", "", -1, 0));
-         map.addConnection(new WeightedConnection("medivac_called -> medivac_arriving", "", 1, 1));
-
-         runner.setMap(map);
-         }
-         }`*/
-        return text;
-    }
-
-    function encode_fcm() {
-        var fcm_txt = generate_fcm_file();
-        var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(fcm_txt));
-        element.setAttribute('download', 'test.java');
-
-        element.style.display = 'none';
-        document.body.appendChild(element);
-
-        element.click();
-
-        document.body.removeChild(element);
-    };
 
     init_diagram();
     init_list_fcms();

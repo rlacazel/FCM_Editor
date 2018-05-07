@@ -39,6 +39,7 @@
                     <li><mark>Add or remove criteria</mark>: right click on an event node</li>
                     <li><mark>AND gate </mark>: by default all incoming links of a node are AND</li>
                     <li><mark>OR gate</mark>: you can use the OR node to make incoming links OR</li>
+                    <li>The <mark>Layout</mark> button automatically arranges nodes of the selected FCM</li>
                 </ul>
             </div>
         </li>
@@ -46,10 +47,15 @@
             <h2><span>Shortcuts / Commands</span></h2>
             <div class="alert alert-light" role="alert" style="font: 14px/24px 'Helvetica Neue', Arial, sans-serif; ">
                 <ul>
-                    <li>Use <mark>Ctrl+z</mark> to undo and <mark>Ctrl+y</mark> to redo</li>
-                    <li>Use <mark>Ctrl+Mouse Wheel</mark> to Zoom</li>
+                    <li><mark>Ctrl+z</mark>: undo / <mark>Ctrl+y</mark>: redo</li>
+                    <li><mark>Ctrl+Mouse Wheel</mark>: Zoom on the graph</li>
+                    <li><mark>Ctrl+c</mark>: copy a node / <mark>Ctrl+v</mark>: paste a node</li>
+                    <li><mark>Ctrl+s</mark>: save current FCM</li>
                     <li>Maintain <mark>Left Mouse Button</mark> outside node to move the graph</li>
-                    <li>The <mark>Layout</mark> button automatically arranges nodes of your FCM</li>
+                    <li>Key <mark>suppr</mark> on a selected node or link to delete it</li>
+                    <li><mark>Shift+Z</mark>: zoom to fit</li>
+                    <li><mark>F2</mark> on a node: edit text</li>
+                    <li><mark>Multiple selection</mark>: maintain <mark>Ctrl</mark> and select nodes or links</li>
                     <li><mark>Rename</mark> a FCM with the first button of the FCM name in the list</li>
                     <li><mark>Delete</mark> a FCM with the cross button of the FCM name in the list</li>
                 </ul>
@@ -59,7 +65,10 @@
             <h2><span>Execute FCM</span></h2>
             <div class="row">
                 <div class="col-3">
-                    <h3 class="text-center">World state</h3>
+                    <div class="row justify-content-center">
+                        <h3 class="text-center">World state</h3>
+                        <a style="margin-top: 6px; margin-left: 8px" id="load_world_state" href="#">(load)</a>
+                    </div>
                     <div id="world_state"></div>
                 </div>
                 <div class="col-1 align-self-center" >
@@ -75,6 +84,9 @@
     <noscript>
         <p>Please enable JavaScript to get the full experience.</p>
     </noscript>
+</div>
+<div style="margin:auto; text-align: center; padding-top: 8px">
+&copy; 2018 Rémi Lacaze-Labadie
 </div>
 <!--
 <a href="#">
