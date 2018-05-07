@@ -220,10 +220,12 @@ jQuery(function($) {
             if ($.inArray(myDiagram.model.nodeDataArray[node_id].key,keys) >= 0)
             {
                 myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", "green");
+                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "strokeWidth", 2);
             }
             else
             {
                 myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", "black");
+                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "strokeWidth", 1);
             }
         }
         for(var link_id in myDiagram.model.linkDataArray)
@@ -231,10 +233,12 @@ jQuery(function($) {
             if ($.inArray(myDiagram.model.linkDataArray[link_id].from, keys) >= 0 && $.inArray(myDiagram.model.linkDataArray[link_id].to, keys) >= 0)
             {
                 myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", "green");
+                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "strokeWidth", 2);
             }
             else
             {
                 myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", "black");
+                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "strokeWidth", 1);
             }
         }
         myDiagram.commitTransaction("change color");
@@ -575,12 +579,12 @@ function init_diagram() {
                         fromLinkable: true,
                         toLinkable: true,
                         fill: "white"},
-                    new go.Binding("stroke", "color")),
+                    new go.Binding("stroke", "color"), new go.Binding("strokeWidth", "strokeWidth")),
                 $(go.TextBlock,
                     { margin: 2,
                         font: "15px sans-serif",
                         editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
-                    new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color"))
+                    new go.Binding("text", "text").makeTwoWay())
             )
         );
 
@@ -592,12 +596,12 @@ function init_diagram() {
                         fromLinkable: true,
                         toLinkable: true,
                         fill: "white"},
-                    new go.Binding("stroke", "color")),
+                    new go.Binding("stroke", "color"), new go.Binding("strokeWidth", "strokeWidth")),
                 $(go.TextBlock,
                     { margin: 3,
                         font: "15px sans-serif",
                         editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
-                    new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color"))
+                    new go.Binding("text", "text").makeTwoWay())
             )
         );
 
@@ -608,10 +612,10 @@ function init_diagram() {
                 fill: "white",
                 stroke: "darkslategray",
                 desiredSize: new go.Size(30, 30),
-                strokeWidth: 1,portId: "",
+                portId: "",
                 fromLinkable: true,
                 toLinkable: true
-            }),
+            }, new go.Binding("stroke", "color"), new go.Binding("strokeWidth", "strokeWidth")),
             $(go.TextBlock, {text:"or"})
         );
 
@@ -626,12 +630,12 @@ function init_diagram() {
                     toSpot: go.Spot.None,
                     toLinkable: true, fill: "white",
                         minSize: new go.Size(0, 38)},
-                    new go.Binding("stroke", "color")),
+                    new go.Binding("stroke", "color"), new go.Binding("strokeWidth", "strokeWidth")),
                 $(go.TextBlock,
                     { margin: 2,
                         font: "15px sans-serif",
                         editable: true, width: 125, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
-                    new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color"))
+                    new go.Binding("text", "text").makeTwoWay())
             )
             // four named ports, one on each side:
             /*makePort("T", go.Spot.Top, true, true),
@@ -648,13 +652,13 @@ function init_diagram() {
                         fromLinkable: true,
                         toLinkable: true,
                         fill: "white"},
-                    new go.Binding("stroke", "color")),
+                    new go.Binding("stroke", "color"), new go.Binding("strokeWidth", "strokeWidth")),
                 $(go.Panel, "Horizontal",
                     $(go.TextBlock,
                         { margin: 5,
                             font: "15px sans-serif",
                             editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
-                        new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color")),
+                        new go.Binding("text", "text").makeTwoWay()),
                     $(go.TextBlock,
                         {   margin: new go.Margin(4, 4, 0, 0),
                             font: "bold 15px sans-serif",
@@ -677,12 +681,12 @@ function init_diagram() {
                         fromLinkable: true,
                         toLinkable: true,
                         fill: "white"},
-                    new go.Binding("stroke", "color")),
+                    new go.Binding("stroke", "color"), new go.Binding("strokeWidth", "strokeWidth")),
                 $(go.TextBlock,
                     { margin: 7,
                         font: "15px sans-serif",
                         editable: true, width: 110, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
-                    new go.Binding("text", "text").makeTwoWay(), new go.Binding("stroke", "color"))
+                    new go.Binding("text", "text").makeTwoWay())
             )
         );
 
@@ -691,7 +695,8 @@ function init_diagram() {
             $(go.Shape, "RoundedRectangle",
                 { fill: "white", portId: "",
                     fromLinkable: true,
-                    toLinkable: true }),
+                    toLinkable: true },
+                new go.Binding("stroke", "color"), new go.Binding("strokeWidth", "strokeWidth")),
             $(go.Panel, "Vertical",
                 $(go.Panel, "Vertical",
                     new go.Binding("itemArray", "items"),
@@ -705,7 +710,7 @@ function init_diagram() {
                                     $(go.TextBlock,
                                         { margin: 5,
                                             font: "15px sans-serif",
-                                            editable: true, width: 120, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
+                                            editable: true, width: 180, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
                                         new go.Binding("text", "text").makeTwoWay()),
                                     $(go.TextBlock,
                                         {   margin: new go.Margin(4, 4, 0, 0),
@@ -806,8 +811,7 @@ function init_diagram() {
             },
             new go.Binding("isShadowed", "isSelected").ofObject(),
             $(go.Shape,
-                { strokeWidth: 1 },
-                new go.Binding("stroke", "color")),
+                new go.Binding("stroke", "color"), new go.Binding("strokeWidth", "strokeWidth")),
             $(go.Shape,
                 { toArrow: "Standard", stroke: null },
                 new go.Binding("fill", "color")),
