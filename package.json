@@ -13,6 +13,25 @@
     "express": "~4.15.5",
     "hbs": "~4.0.1",
     "morgan": "~1.9.0",
-    "serve-favicon": "~2.4.5"
-  }
+    "serve-favicon": "~2.4.5",
+    "java_process": "~0.1.0-9"
+  },
+  "description": "FCM Editor",
+  "main": "app.js",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rlacazel/FCM_Editor.git"
+  },
+  "keywords": [
+    "FCM",
+    "graph",
+    "Editor"
+  ],
+  "author": "Rémi Lacaze-Labadie",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/rlacazel/FCM_Editor/issues"
+  },
+  "homepage": "https://github.com/rlacazel/FCM_Editor#readme"
 }
