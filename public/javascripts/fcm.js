@@ -354,10 +354,17 @@ jQuery(function($) {
             update_world_state();
         };
         document.getElementById("validate_properties").onclick = function () {
-            var answer= '';
+            var type_io = '';
             $('#inputoutput .active').each(function(){
-                answer= $(this).attr('id');
+                type_io = $(this).attr('id');
             });
+            var predicate = [];
+            $('#edittable :input').each(function(){
+                predicate.push($(this).val());
+            });
+            var node_id = $('#NodeProperty').attr("data-nodeid");
+            myDiagram.model.setDataProperty(myDiagram.findNodeForKey(node_id).data, "type_io", type_io);
+            // TO CONTINUE
         };
     }
 
@@ -578,6 +585,7 @@ function init_diagram() {
                 function(e, obj) {
                     var part = obj.part;  // the Button is in the context menu Adornment
                     $j('#properties_label').html(part.data.text);
+                    $j('#NodeProperty').attr("data-nodeid",obj.part.key);
                     $j('#NodeProperty').modal('show');
                 },
                 function(o) { return true; })
