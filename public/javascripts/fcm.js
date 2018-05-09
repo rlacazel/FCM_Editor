@@ -353,6 +353,12 @@ jQuery(function($) {
         document.getElementById("load_world_state").onclick = function () {
             update_world_state();
         };
+        document.getElementById("validate_properties").onclick = function () {
+            var answer= '';
+            $('#inputoutput .active').each(function(){
+                answer= $(this).attr('id');
+            });
+        };
     }
 
     function generate_default_fcm_name()
@@ -377,6 +383,7 @@ jQuery(function($) {
 function init_diagram() {
 
     var $ = go.GraphObject.make;
+    var $j = jQuery.noConflict();
     var NodeType = {"state":1, "event":2, "action":3, "comment":4};
 
     myDiagram =
@@ -566,7 +573,14 @@ function init_diagram() {
                 function(obj) {
                     var part = obj.part;  // the Button is in the context menu Adornment
                     return part.data.difficulty.length > 0;
-                })
+                }),
+            makeButton("Properties",
+                function(e, obj) {
+                    var part = obj.part;  // the Button is in the context menu Adornment
+                    $j('#properties_label').html(part.data.text);
+                    $j('#NodeProperty').modal('show');
+                },
+                function(o) { return true; })
         );
 
     var partContextMenuForLink =
