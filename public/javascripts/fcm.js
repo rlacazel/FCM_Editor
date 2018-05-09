@@ -23,7 +23,7 @@ jQuery(function($) {
             // do not enter if the selected element was already selected or the click is on the input rename box
             if (selected_li == li || $("#target").is(":input")) return;
 
-            if (fcms && fcm_name in fcms) {  myDiagram.model = go.Model.fromJson(fcms[fcm_name]); }
+            if (fcms && span_text.textContent in fcms) {  myDiagram.model = go.Model.fromJson(fcms[span_text.textContent]); }
             else  { myDiagram.model = new go.GraphLinksModel();
                     myDiagram.model.copiesArrays = true;
                     myDiagram.model.copiesArrayObjects = true; }
@@ -269,7 +269,7 @@ jQuery(function($) {
         save_fcm(selected_li.find('#fcm_txt').text());
     };
 
-    $("#download").click(function() {
+    /*$("#download").click(function() {
         var fcm_txt = myDiagram.model.toJson();
         var element = document.createElement('a');
         element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(fcm_txt));
@@ -281,6 +281,31 @@ jQuery(function($) {
         element.click();
 
         document.body.removeChild(element);
+    });*/
+
+    $("#download").click(function() {
+        $.ajax({
+            type: "POST",
+            url: "/get_fcms",
+            data: {},
+            success: function (result) {
+                var fcms_db = JSON.parse(result);
+                var element = document.createElement('a');
+                element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(result));
+                element.setAttribute('download', 'fcms.json');
+
+                element.style.display = 'none';
+                document.body.appendChild(element);
+
+                element.click();
+
+                document.body.removeChild(element);
+            },
+            error: function (result) {
+                // alert('error');
+            }
+        });
+
     });
 
     $("#run_fcm").click(function() {
