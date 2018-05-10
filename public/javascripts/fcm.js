@@ -2,8 +2,20 @@ var fcms = null;
 var myDiagram = null;
 var selected_li = null;
 var redraw_required = false;
+var predicates_table = null;
+var right_clicked_data = null;
 
 jQuery(function($) {
+
+    predicates_table = $("#edittable").editTable({
+        data: [
+            ['']
+        ],
+        headerCols: [
+            'Predicates'
+        ],
+        //maxRows: 3
+    });
 
     function add_fcm_in_list_ui(fcm_name, add_before) {
         var ul = $("#list_fcm");
@@ -45,6 +57,15 @@ jQuery(function($) {
         else {ul.append(li);}
 
         return li;
+    }
+
+    function get_all_fcm_name_on_screen()
+    {
+        var fcms_name = [];
+        $("#list_fcm li").each(function () {
+            fcms_name.push($(this).find('#fcm_txt').text());
+        });
+        return fcms_name;
     }
 
     function update_world_state()
@@ -269,19 +290,12 @@ jQuery(function($) {
         save_fcm(selected_li.find('#fcm_txt').text());
     };
 
-    /*$("#download").click(function() {
-        var fcm_txt = myDiagram.model.toJson();
-        var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(fcm_txt));
-        element.setAttribute('download', 'test.java');
-
-        element.style.display = 'none';
-        document.body.appendChild(element);
-
-        element.click();
-
-        document.body.removeChild(element);
-    });*/
+    document.getElementById("new_fcm").onclick = function (e) {
+        e.preventDefault();
+        var li = add_fcm_in_list_ui(generate_default_fcm_name(),true);
+        li.click();
+        li.find('#unsaved_label').css("visibility", "visible");
+    };
 
     $("#download").click(function() {
         $.ajax({
@@ -354,25 +368,27 @@ jQuery(function($) {
             update_world_state();
         };
         document.getElementById("validate_properties").onclick = function () {
-            var type_io = '';
-            $('#inputoutput .active').each(function(){
-                type_io = $(this).attr('id');
-            });
-            var predicate = [];
-            $('#edittable :input').each(function(){
-                predicate.push($(this).val());
-            });
-            var node_id = $('#NodeProperty').attr("data-nodeid");
-            myDiagram.model.setDataProperty(myDiagram.findNodeForKey(node_id).data, "type_io", type_io);
-            // TO CONTINUE
+            if (right_clicked_data) {
+                var type_io = '';
+                $('#inputoutput .active').each(function () {
+                    type_io = $(this).attr('id');
+                });
+                var predicates = predicates_table.getJsonData();
+                myDiagram.model.setDataProperty(right_clicked_data, "type_io", type_io);
+                myDiagram.model.setDataProperty(right_clicked_data, "predicates", predicates);
+                update_unsave_label();
+                right_clicked_data = null;
+            }
+            $('#NodeProperty').modal('hide');
         };
     }
 
     function generate_default_fcm_name()
     {
         var i = 2;
+        var fcms_name = get_all_fcm_name_on_screen();
         var name = 'Untitled';
-        while(name in fcms)
+        while(name in fcms || $.inArray(name, fcms_name) >= 0)
         {
             name = 'Untitled' + i.toString();
             i++;
@@ -570,7 +586,7 @@ function init_diagram() {
                    var part = obj.part;  // the Button is in the context menu Adornment
                     myDiagram.model.setDataProperty(part.data, "difficulty", part.data.difficulty+"+");
                 },
-                function(o) { return true; }),
+                function(obj) { return !obj.part.data.category || obj.part.data.category == "event" || obj.part.data.category == "simu_event"; }),
             makeButton("Remove difficulty",
                 function(e, obj) {
                     var part = obj.part;  // the Button is in the context menu Adornment
@@ -579,17 +595,38 @@ function init_diagram() {
                 },
                 function(obj) {
                     var part = obj.part;  // the Button is in the context menu Adornment
-                    return part.data.difficulty.length > 0;
+                    return (!obj.part.data.category || obj.part.data.category == "event" || obj.part.data.category == "simu_event") && part.data.difficulty.length > 0;
                 }),
             makeButton("Properties",
                 function(e, obj) {
-                    var part = obj.part;  // the Button is in the context menu Adornment
-                    $j('#properties_label').html(part.data.text);
-                    $j('#NodeProperty').attr("data-nodeid",obj.part.key);
-                    $j('#NodeProperty').modal('show');
+                    right_clicked_data = obj.part.data;
+                    fill_and_display_property_modal(right_clicked_data);
                 },
                 function(o) { return true; })
         );
+
+    function fill_and_display_property_modal(data)
+    {
+        $j('#properties_label').html(data.text);
+        // Load input output button
+        $j('#inputoutput label').each(function(){
+            if(data.type_io) {
+                if ($j(this).attr('id') == data.type_io) {
+                    $j(this).addClass("active");
+                }
+                else {
+                    $j(this).removeClass("active");
+                }
+            }
+        });
+        // Load predicates
+        if (data.predicates) {
+            var predicates = data.predicates;
+            var data = [predicates];
+            predicates_table.loadJsonData(predicates);
+        }
+        $j('#NodeProperty').modal('show');
+    }
 
     var partContextMenuForLink =
         $(go.Adornment, "Vertical",
@@ -683,12 +720,10 @@ function init_diagram() {
                         font: "15px sans-serif",
                         editable: true, width: 125, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
                     new go.Binding("text", "text").makeTwoWay())
-            )
-            // four named ports, one on each side:
-            /*makePort("T", go.Spot.Top, true, true),
-            makePort("L", go.Spot.Left, true, true),
-            makePort("R", go.Spot.Right, true, true),
-            makePort("B", go.Spot.Bottom, true, true)*/
+            ),
+            {
+                contextMenu: partContextMenu
+            }
         );
 
     var eventtemplate =
@@ -734,7 +769,10 @@ function init_diagram() {
                         font: "15px sans-serif",
                         editable: true, width: 110, wrap: go.TextBlock.WrapFit, textAlign: "center", isMultiline: false},
                     new go.Binding("text", "text").makeTwoWay())
-            )
+            ),
+            {
+                contextMenu: partContextMenu
+            }
         );
 
     var simulta_template =
