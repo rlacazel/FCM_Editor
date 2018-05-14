@@ -220,9 +220,12 @@ jQuery(function($) {
                     });
                     li.attr("id",JSON.stringify(keys));
                     li.text(name);
-                    li.on("click", function(){
+                    li.mouseenter(function() {
                         var keys = JSON.parse(this.id);
                         color_path(keys);
+                    });
+                    li.mouseout(function() {
+                        color_path({});
                     });
                     list.append(li);
                 }
@@ -235,39 +238,44 @@ jQuery(function($) {
 
     function color_path(keys)
     {
-        myDiagram.startTransaction("change color");
-        for(var node_id in myDiagram.model.nodeDataArray)
-        {
-            if ($.inArray(myDiagram.model.nodeDataArray[node_id].key,keys) >= 0)
-            {
-                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", "green");
-                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "strokeWidth", 2);
-            }
-            else
-            {
-                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", "black");
-                myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "strokeWidth", 1);
-            }
-        }
+        //myDiagram.startTransaction("change color");
+        var color = "black";
+        var strokeW = 1;
+        var keys_linked = [];
         for(var link_id in myDiagram.model.linkDataArray)
         {
             if ($.inArray(myDiagram.model.linkDataArray[link_id].from, keys) >= 0 && $.inArray(myDiagram.model.linkDataArray[link_id].to, keys) >= 0)
             {
-                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", "green");
-                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "strokeWidth", 2);
+                strokeW = 2;
+                color = "green";
+                keys_linked.push(myDiagram.model.linkDataArray[link_id].from);
+                keys_linked.push(myDiagram.model.linkDataArray[link_id].to);
             }
-            else
+            else if(keys.length > 0)
             {
-                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", "black");
-                myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "strokeWidth", 1);
+                color = "lightgrey";
             }
+            myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "color", color);
+            myDiagram.model.setDataProperty(myDiagram.model.linkDataArray[link_id], "strokeWidth", strokeW);
         }
-        myDiagram.commitTransaction("change color");
+        for(var node_id in myDiagram.model.nodeDataArray)
+        {
+            if ($.inArray(myDiagram.model.nodeDataArray[node_id].key,keys_linked) >= 0)
+            {
+                strokeW = 2;
+                color = "green";
+            }
+            else if(keys.length > 0)
+            {
+                color = "lightgrey";
+            }
+            myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "color", color);
+            myDiagram.model.setDataProperty(myDiagram.model.nodeDataArray[node_id], "strokeWidth", strokeW);
+        }
+        //myDiagram.commitTransaction("change color");
     }
 
     function save_fcm(name) {
-        // do not save green path
-        color_path({});
         $.ajax({
             type: "POST",
             url: "/save_fcm",
@@ -295,6 +303,70 @@ jQuery(function($) {
         var li = add_fcm_in_list_ui(generate_default_fcm_name(),true);
         li.click();
         li.find('#unsaved_label').css("visibility", "visible");
+    };
+
+    document.getElementById("generate_apl").onclick = function (e) {
+        var datas = [];
+        var criteria = [];
+        var inputs = [];
+        var outputs = [];
+        myDiagram.model.nodeDataArray.forEach(function (data) {
+            if (data.category == 'simu_event' && data.items.length > 0) {
+                data.items.forEach(function (item) {
+                    datas.push(item);
+                });
+            }
+            else {
+                datas.push(data);
+            }
+        });
+        datas.forEach(function (data) {
+            var name = data.text.split(' ').join('_');
+            if (data.difficulty)
+            {
+                criteria.push(name + ': difficulty ' + data.difficulty.length + ';');
+            }
+
+            if(data.predicates)
+            {
+                var preds = JSON.parse(data.predicates);
+                if (data.type_io && data.type_io == 'input') {
+                    for (var p_id in preds) {
+                        inputs.push(name + ' = ' + preds[p_id][0] + ';')
+                    }
+                }
+                if (data.predicates && data.type_io && data.type_io == 'output') {
+                    for (var p_id in preds) {
+                        outputs.push(name + '= ' + preds[p_id][0] + ';')
+                    }
+                }
+            }
+        });
+        // Build string
+        var fcm_apl = 'fcm ' + selected_li.find('#fcm_txt').text().split(' ').join('_').substring(0,50).toLowerCase() + '\n{\n';
+        if (criteria.length > 0) {
+            fcm_apl += '\tcriteria:\n';
+            for(var id in criteria)
+            {
+                fcm_apl += '\t\t' + criteria[id] + '\n';
+            }
+        }
+        if (inputs.length > 0) {
+            fcm_apl += '\tinputs:\n';
+            for(var id in inputs)
+            {
+                fcm_apl += '\t\t' + inputs[id] + '\n';
+            }
+        }
+        if (outputs.length > 0) {
+            fcm_apl += '\toutputs:\n';
+            for(var id in outputs)
+            {
+                fcm_apl += '\t\t' + outputs[id] + '\n';
+            }
+        }
+        fcm_apl += '}';
+        $("#apl_tarea").val(fcm_apl);
     };
 
     $("#download").click(function() {
@@ -624,6 +696,10 @@ function init_diagram() {
             var predicates = data.predicates;
             var data = [predicates];
             predicates_table.loadJsonData(predicates);
+        }
+        else
+        {
+            predicates_table.loadData([[]]);
         }
         $j('#NodeProperty').modal('show');
     }

@@ -1,0 +1,4 @@
+#TODO:
+- When execute, remove path not going to the end
+- When highlight selected path, remove state not link to the path
+- Instead of clicking, highlight path when mousse hover and lower opacity of not selected node
