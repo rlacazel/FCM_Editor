@@ -307,9 +307,11 @@ jQuery(function($) {
 
     document.getElementById("generate_apl").onclick = function (e) {
         var datas = [];
+        var unlinked_data = [];
         var criteria = [];
         var inputs = [];
         var outputs = [];
+        var preconds = [];
         myDiagram.model.nodeDataArray.forEach(function (data) {
             if (data.category == 'simu_event' && data.items.length > 0) {
                 data.items.forEach(function (item) {
@@ -317,11 +319,25 @@ jQuery(function($) {
                 });
             }
             else {
-                datas.push(data);
+                var linked_data = false;
+                for(var link_id in myDiagram.model.linkDataArray)
+                {
+                    if (data.key == myDiagram.model.linkDataArray[link_id].from || data.key == myDiagram.model.linkDataArray[link_id].to) {
+                        linked_data = true;
+                    }
+                }
+                if (linked_data)
+                {
+                    datas.push(data);
+                }
+                else
+                {
+                    unlinked_data.push(data);
+                }
             }
         });
         datas.forEach(function (data) {
-            var name = data.text.split(' ').join('_');
+            var name = data.text.split(' ').join('_').toLowerCase();
             if (data.difficulty)
             {
                 criteria.push(name + ': difficulty ' + data.difficulty.length + ';');
@@ -337,18 +353,36 @@ jQuery(function($) {
                 }
                 if (data.predicates && data.type_io && data.type_io == 'output') {
                     for (var p_id in preds) {
-                        outputs.push(name + '= ' + preds[p_id][0] + ';')
+                        outputs.push(name + ': ' + preds[p_id][0] + ';')
+                    }
+                }
+            }
+        });
+        unlinked_data.forEach(function (data) {
+            if(data.predicates)
+            {
+                var preds = JSON.parse(data.predicates);
+                if (data.type_io && data.type_io == 'input') {
+                    for (var p_id in preds) {
+                        preconds.push('@start: ' + preds[p_id][0] + ';')
                     }
                 }
             }
         });
         // Build string
-        var fcm_apl = 'fcm ' + selected_li.find('#fcm_txt').text().split(' ').join('_').substring(0,50).toLowerCase() + '\n{\n';
+        var fcm_apl = 'fcm ' + selected_li.find('#fcm_txt').text().split(' ').join('_').substring(0,50).toLowerCase() + '()\n{\n';
         if (criteria.length > 0) {
             fcm_apl += '\tcriteria:\n';
             for(var id in criteria)
             {
                 fcm_apl += '\t\t' + criteria[id] + '\n';
+            }
+        }
+        if (preconds.length > 0) {
+            fcm_apl += '\tconditions:\n';
+            for(var id in preconds)
+            {
+                fcm_apl += '\t\t' + preconds[id] + '\n';
             }
         }
         if (inputs.length > 0) {
