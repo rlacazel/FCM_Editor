@@ -89,6 +89,7 @@ jQuery(function($) {
                 var input = $("<input></input>");
                 input.attr("type", "checkbox");
                 input.attr("id", key);
+                input.attr("name", name);
 
                 var span = $("<span></span>");
                 span.attr("class", "label-text");
@@ -311,6 +312,7 @@ jQuery(function($) {
         var criteria = [];
         var inputs = [];
         var outputs = [];
+        var concepts = new Set();
         var preconds = [];
         myDiagram.model.nodeDataArray.forEach(function (data) {
             if (data.category == 'simu_event' && data.items.length > 0) {
@@ -338,6 +340,7 @@ jQuery(function($) {
         });
         datas.forEach(function (data) {
             var name = data.text.split(' ').join('_').toLowerCase();
+            concepts.add(name);
             if (data.difficulty)
             {
                 criteria.push(name + ': difficulty ' + data.difficulty.length + ';');
@@ -370,7 +373,12 @@ jQuery(function($) {
             }
         });
         // Build string
-        var fcm_apl = 'fcm ' + selected_li.find('#fcm_txt').text().split(' ').join('_').substring(0,50).toLowerCase() + '()\n{\n';
+        var fcm_apl = 'concepts { ';
+        concepts.forEach(function (concept) {
+            fcm_apl += concept + ', ';
+        });
+        fcm_apl +=    ' }\n\n';
+        fcm_apl += 'fcm ' + selected_li.find('#fcm_txt').text().split(' ').join('_').substring(0,50).toLowerCase() + '()\n{\n';
         if (criteria.length > 0) {
             fcm_apl += '\tcriteria:\n';
             for(var id in criteria)
@@ -401,6 +409,20 @@ jQuery(function($) {
         }
         fcm_apl += '}';
         $("#apl_tarea").val(fcm_apl);
+    };
+
+    document.getElementById("download_fcm_json").onclick = function (e) {
+        var fcm_json = fcms[selected_li.find('#fcm_txt').text()];
+        var element = document.createElement('a');
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(fcm_json));
+        element.setAttribute('download', 'fcms.json');
+
+        element.style.display = 'none';
+        document.body.appendChild(element);
+
+        element.click();
+
+        document.body.removeChild(element);
     };
 
     $("#download").click(function() {
@@ -435,7 +457,8 @@ jQuery(function($) {
         {
             if(inputs[input_id].checked)
             {
-                params[inputs[input_id].id] = 1;
+                var name = inputs[input_id].name.split(' ').join('_').toLowerCase();
+                params[name] = 1;
             }
         }
         execute_fcm(selected_li.find('#fcm_txt').text(), params);
